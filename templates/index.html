@@ -1,114 +1,299 @@
 {% extends "base.html" %}
 
-{% block title %}Suzano | Portal de Coletas FOB e Divergências{% endblock %}
+{% block title %}Suzano | Gestão Estratégica de Coletas FOB & Devoluções{% endblock %}
 
 {% block content %}
-<div class="max-w-4xl mx-auto py-8">
+<style>
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(1deg); }
+  }
+  @keyframes float-reverse {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(8px) rotate(-1deg); }
+  }
+  @keyframes pulse-subtle {
+    0%, 100% { opacity: 0.3; transform: scale(1); }
+    50% { opacity: 0.6; transform: scale(1.05); }
+  }
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
+  .animate-float {
+    animation: float-slow 6s ease-in-out infinite;
+  }
+  .animate-float-delayed {
+    animation: float-reverse 7s ease-in-out infinite 1s;
+  }
+  .animate-glow {
+    animation: pulse-subtle 4s ease-in-out infinite;
+  }
+  .shimmer-effect {
+    position: relative;
+    overflow: hidden;
+  }
+  .shimmer-effect::after {
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.15) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 3s infinite;
+    content: '';
+  }
+</style>
 
-  <!-- Banner de Boas-Vindas -->
-  <div class="bg-gradient-to-r from-suzano to-emerald-800 text-white rounded-2xl p-8 mb-8 shadow-xl relative overflow-hidden">
-    <div class="absolute -right-12 -bottom-12 opacity-10">
-      <i data-lucide="truck" class="w-72 h-72"></i>
-    </div>
-    <div class="relative z-10 max-w-2xl">
-      <div class="inline-flex items-center space-x-2 bg-emerald-500/20 text-emerald-200 text-xs px-3 py-1 rounded-full mb-3 border border-emerald-400/30">
-        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
-        <span>Fluxo Oficial de Devoluções & Divergências FOB</span>
+<div class="py-6 max-w-6xl mx-auto">
+
+  <!-- HERO SECTION EXECUTIVA COM GRADIENTE E MOVIMENTO -->
+  <div class="relative rounded-3xl bg-gradient-to-br from-slate-900 via-emerald-950 to-slate-900 text-white p-8 sm:p-12 mb-10 overflow-hidden shadow-2xl border border-emerald-500/20">
+    
+    <!-- Orbes de Luz Fluida em Segundo Plano -->
+    <div class="absolute -top-24 -left-24 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-glow pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-teal-400/15 rounded-full blur-3xl animate-glow pointer-events-none" style="animation-delay: 2s;"></div>
+    
+    <!-- Elementos Flutuantes Tecnológicos (Movimento) -->
+    <div class="absolute right-8 top-12 opacity-15 hidden lg:block animate-float pointer-events-none">
+      <div class="w-48 h-48 border border-emerald-400/40 rounded-2xl flex items-center justify-center">
+        <i data-lucide="shield-check" class="w-24 h-24 text-emerald-300"></i>
       </div>
-      <h1 class="text-3xl font-extrabold tracking-tight mb-2">Canal Rápido de Divergências FOB</h1>
-      <p class="text-emerald-100 text-sm leading-relaxed">
-        Detectou avaria, falta de produto, sobra ou erro de faturamento durante o carregamento no armazém? Abra o protocolo imediatamente com fotos para direcionamento expresso na Suzano.
+    </div>
+    <div class="absolute right-32 bottom-6 opacity-10 hidden lg:block animate-float-delayed pointer-events-none">
+      <div class="w-32 h-32 border border-teal-300/30 rounded-full flex items-center justify-center">
+        <i data-lucide="truck" class="w-16 h-16 text-teal-200"></i>
+      </div>
+    </div>
+
+    <!-- Conteúdo Central do Hero -->
+    <div class="relative z-10 max-w-3xl">
+      
+      <!-- Tag Executiva com Ponto Pulsante -->
+      <div class="inline-flex items-center space-x-2.5 bg-emerald-500/10 border border-emerald-400/30 backdrop-blur-md px-3.5 py-1.5 rounded-full mb-6 text-xs text-emerald-300 shadow-inner">
+        <span class="relative flex h-2 w-2">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+        </span>
+        <span class="font-semibold tracking-wider uppercase">Plataforma Logística Suzano • Expedição FOB</span>
+      </div>
+
+      <!-- Título de Impacto Executivo -->
+      <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+        Governança de Devoluções & <br class="hidden sm:block"/>
+        <span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-200">
+          Tratativa de Divergências FOB
+        </span>
+      </h1>
+
+      <!-- Subtítulo -->
+      <p class="text-sm sm:text-base text-slate-300 leading-relaxed mb-8 max-w-2xl font-light">
+        Ecossistema integrado para registro ágil na doca, auditoria operacional e ressarcimento de clientes com rastreabilidade digital e transparência de ponta a ponta.
       </p>
+
+      <!-- Barra de Acesso Rápido a Protocolo no Hero -->
+      <form onsubmit="event.preventDefault(); const v = document.getElementById('hero-protocolo').value.trim(); if(v) window.location.href='/rastreio/' + encodeURIComponent(v);"
+            class="flex flex-col sm:flex-row gap-2 max-w-xl bg-white/10 backdrop-blur-md p-2 rounded-2xl border border-white/15 shadow-xl">
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-4 h-4 text-emerald-300 absolute left-3.5 top-3"></i>
+          <input type="text" id="hero-protocolo" placeholder="Já tem um protocolo? Digite ex: FOB-2026-00101"
+                 class="w-full pl-10 pr-3 py-2 text-xs sm:text-sm bg-transparent text-white placeholder-slate-400 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-400 font-mono uppercase">
+        </div>
+        <button type="submit" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition-all duration-300 flex items-center justify-center space-x-1.5 shrink-0 group">
+          <span>Rastrear Ocorrência</span>
+          <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+        </button>
+      </form>
+
     </div>
   </div>
 
-  <!-- Cards de Acesso Rápido -->
+  <!-- TICKER DE INDICADORES EXECUTIVOS (CARDS DE ESTATÍSTICA / CONFIABILIDADE) -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+    
+    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-center space-x-3 mb-1">
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+          <i data-lucide="zap" class="w-4 h-4"></i>
+        </div>
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Abertura</span>
+      </div>
+      <p class="text-xl font-extrabold text-slate-900">&lt; 2 minutos</p>
+      <p class="text-[11px] text-slate-500 mt-0.5">Com fotos tiradas direto na doca</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-center space-x-3 mb-1">
+        <div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-700 flex items-center justify-center">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+        </div>
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Fluxo Especializado</span>
+      </div>
+      <p class="text-xl font-extrabold text-slate-900">3 Filas Dedicadas</p>
+      <p class="text-[11px] text-slate-500 mt-0.5">Devolução • Procedência • FO</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-center space-x-3 mb-1">
+        <div class="w-8 h-8 rounded-lg bg-blue-50 text-blue-700 flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+        </div>
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Auditoria</span>
+      </div>
+      <p class="text-xl font-extrabold text-slate-900">100% Rastreável</p>
+      <p class="text-[11px] text-slate-500 mt-0.5">Histórico completo de pareceres</p>
+    </div>
+
+    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+      <div class="flex items-center space-x-3 mb-1">
+        <div class="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
+          <i data-lucide="activity" class="w-4 h-4"></i>
+        </div>
+        <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Disponibilidade</span>
+      </div>
+      <p class="text-xl font-extrabold text-emerald-700">Online 24/7</p>
+      <p class="text-[11px] text-slate-500 mt-0.5">Nuvem global em tempo real</p>
+    </div>
+
+  </div>
+
+  <!-- PORTAIS DE ENTRADA EXECUTIVOS (3 PILARES PRINCIPAIS) -->
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
 
-    <!-- Card 1: Motorista / Abrir Ocorrência -->
-    <a href="/nova-ocorrencia" class="bg-white rounded-xl p-6 border-2 border-emerald-500/20 hover:border-emerald-600 shadow-sm hover:shadow-md transition flex flex-col justify-between group">
+    <!-- Card 1: Motorista / Transportador na Doca -->
+    <a href="/nova-ocorrencia" class="group relative bg-white rounded-3xl p-7 border-2 border-slate-200 hover:border-emerald-600 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between overflow-hidden">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-50 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-500 pointer-events-none"></div>
+      
       <div>
-        <div class="w-12 h-12 bg-emerald-100 text-emerald-800 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
-          <i data-lucide="camera" class="w-6 h-6"></i>
+        <div class="w-14 h-14 bg-gradient-to-tr from-emerald-600 to-teal-500 text-white rounded-2xl flex items-center justify-center mb-6 shadow-md shadow-emerald-500/20 group-hover:rotate-3 transition-transform duration-300">
+          <i data-lucide="camera" class="w-7 h-7"></i>
         </div>
-        <h3 class="text-lg font-bold text-slate-900 mb-1 group-hover:text-emerald-700 transition">Motorista / Cliente</h3>
-        <p class="text-xs text-slate-500 leading-relaxed mb-4">
-          Localizou divergência ou avaria na carga? Registre o protocolo com fotos tiradas na doca.
+        
+        <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full mb-2">Portal Doca & Mobile</span>
+        <h2 class="text-xl font-extrabold text-slate-900 mb-2 group-hover:text-emerald-700 transition">Motorista / Cliente</h2>
+        <p class="text-xs text-slate-500 leading-relaxed mb-6 font-normal">
+          Identificou avaria, sobra, falta física de fardos ou divergência de nota fiscal? Abra o protocolo na hora pela câmera do celular.
         </p>
       </div>
-      <div class="flex items-center text-xs font-semibold text-emerald-700 space-x-1">
-        <span>Abrir Protocolo</span>
-        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+
+      <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-emerald-700 group-hover:text-emerald-800">
+        <span>Registrar Ocorrência FOB</span>
+        <div class="w-8 h-8 rounded-full bg-emerald-50 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center transition-all duration-300">
+          <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"></i>
+        </div>
       </div>
     </a>
 
-    <!-- Card 2: Consultar Protocolo -->
-    <a href="/rastreio" class="bg-white rounded-xl p-6 border border-slate-200 hover:border-slate-400 shadow-sm hover:shadow-md transition flex flex-col justify-between group">
+    <!-- Card 2: Mesa Operacional Suzano (Área Devolução / Procedência / FO) -->
+    <a href="/painel" class="group relative bg-gradient-to-b from-slate-900 to-slate-950 text-white rounded-3xl p-7 border border-slate-800 hover:border-emerald-500/50 shadow-xl hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between overflow-hidden">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-500 pointer-events-none"></div>
+      
       <div>
-        <div class="w-12 h-12 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
-          <i data-lucide="search" class="w-6 h-6"></i>
+        <div class="w-14 h-14 bg-gradient-to-tr from-amber-500 to-emerald-500 text-slate-950 rounded-2xl flex items-center justify-center mb-6 shadow-md shadow-emerald-500/20 group-hover:rotate-3 transition-transform duration-300 font-black">
+          <i data-lucide="layout-dashboard" class="w-7 h-7"></i>
         </div>
-        <h3 class="text-lg font-bold text-slate-900 mb-1 group-hover:text-blue-700 transition">Rastrear Andamento</h3>
-        <p class="text-xs text-slate-500 leading-relaxed mb-4">
-          Já tem um protocolo? Acompanhe o parecer das equipes de Fiscal, Qualidade e Armazém em tempo real.
+        
+        <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-amber-300 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-full mb-2">Ambiente Interno Suzano</span>
+        <h2 class="text-xl font-extrabold text-white mb-2 group-hover:text-emerald-300 transition">Mesa de Operações</h2>
+        <p class="text-xs text-slate-400 leading-relaxed mb-6 font-light">
+          Gestão das filas de <strong class="text-emerald-300">Área Devolução</strong>, direcionamento para <strong class="text-blue-300">Análise de Procedência</strong> e encerramento para <strong class="text-purple-300">Finalizar FO</strong>.
         </p>
       </div>
-      <div class="flex items-center text-xs font-semibold text-blue-700 space-x-1">
-        <span>Consultar Status</span>
-        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+
+      <div class="pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-bold text-emerald-400 group-hover:text-emerald-300">
+        <span>Acessar Painel Gerencial</span>
+        <div class="w-8 h-8 rounded-full bg-white/10 group-hover:bg-emerald-500 group-hover:text-slate-950 flex items-center justify-center transition-all duration-300">
+          <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"></i>
+        </div>
       </div>
     </a>
 
-    <!-- Card 3: Equipe Interna Suzano -->
-    <a href="/painel" class="bg-white rounded-xl p-6 border border-slate-200 hover:border-suzano shadow-sm hover:shadow-md transition flex flex-col justify-between group">
+    <!-- Card 3: Rastreabilidade & Consulta Pública -->
+    <a href="/rastreio" class="group relative bg-white rounded-3xl p-7 border-2 border-slate-200 hover:border-blue-500 shadow-sm hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 flex flex-col justify-between overflow-hidden">
+      <div class="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-6 -mt-6 group-hover:scale-110 transition-transform duration-500 pointer-events-none"></div>
+      
       <div>
-        <div class="w-12 h-12 bg-slate-100 text-suzano rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition">
-          <i data-lucide="sliders-horizontal" class="w-6 h-6"></i>
+        <div class="w-14 h-14 bg-gradient-to-tr from-blue-600 to-indigo-500 text-white rounded-2xl flex items-center justify-center mb-6 shadow-md shadow-blue-500/20 group-hover:rotate-3 transition-transform duration-300">
+          <i data-lucide="search-check" class="w-7 h-7"></i>
         </div>
-        <h3 class="text-lg font-bold text-slate-900 mb-1 group-hover:text-suzano transition">Mesa Suzano</h3>
-        <p class="text-xs text-slate-500 leading-relaxed mb-4">
-          Acesso interno para triagem, direcionamento para filas (Fiscal, Armazém, Qualidade) e laudos.
+        
+        <span class="inline-block text-[10px] font-bold uppercase tracking-wider text-blue-700 bg-blue-50 px-2.5 py-1 rounded-full mb-2">Consulta Transparente</span>
+        <h2 class="text-xl font-extrabold text-slate-900 mb-2 group-hover:text-blue-700 transition">Rastrear Andamento</h2>
+        <p class="text-xs text-slate-500 leading-relaxed mb-6 font-normal">
+          Consulte o parecer oficial da Suzano através da timeline de 4 etapas sem precisar de e-mails ou ligações avulsas.
         </p>
       </div>
-      <div class="flex items-center text-xs font-semibold text-suzano space-x-1">
-        <span>Acessar Painel</span>
-        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+
+      <div class="pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-blue-700 group-hover:text-blue-800">
+        <span>Consultar por Protocolo</span>
+        <div class="w-8 h-8 rounded-full bg-blue-50 group-hover:bg-blue-600 group-hover:text-white flex items-center justify-center transition-all duration-300">
+          <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-0.5 transition-transform"></i>
+        </div>
       </div>
     </a>
 
   </div>
 
-  <!-- Como Funciona o Fluxo -->
-  <div class="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center space-x-2">
-      <i data-lucide="workflow" class="w-4 h-4 text-emerald-600"></i>
-      <span>Como funciona o fluxo de devoluções e divergências</span>
-    </h3>
-    
-    <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
-      <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
-        <span class="w-6 h-6 rounded-full bg-emerald-600 text-white font-bold inline-flex items-center justify-center mb-2">1</span>
-        <p class="font-bold text-slate-800 mb-1">Coleta na Doca</p>
-        <p class="text-slate-500">Motorista confere a carga FOB. Se estiver tudo OK, viagem liberada.</p>
+  <!-- FLUXO METODOLÓGICO DE GOVERNANÇA (VISUAL CORPORATIVO) -->
+  <div class="bg-white rounded-3xl p-8 border border-slate-200/80 shadow-sm relative overflow-hidden">
+    <div class="max-w-2xl mb-6">
+      <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Governança Integrada</span>
+      <h2 class="text-xl font-extrabold text-slate-900 tracking-tight mt-1">Como o ciclo de divergência é conduzido na Suzano</h2>
+      <p class="text-xs text-slate-500 mt-1">Um processo fluido que protege os interesses fiscais, operacionais e o relacionamento com o cliente.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative">
+
+      <!-- Etapa 1 -->
+      <div class="relative bg-slate-50 p-5 rounded-2xl border border-slate-200/60 hover:bg-slate-100/60 transition">
+        <div class="flex items-center space-x-3 mb-3">
+          <div class="w-9 h-9 rounded-xl bg-amber-500 text-white font-black text-sm flex items-center justify-center shadow-sm">
+            1
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Área Devolução</h3>
+            <span class="text-[10px] text-amber-700 font-semibold">Fila de Entrada</span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Ponto central onde todo protocolo gerado pelo motorista é recepcionado com NF e evidências fotográficas para triagem inicial imediata.
+        </p>
       </div>
 
-      <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
-        <span class="w-6 h-6 rounded-full bg-amber-500 text-white font-bold inline-flex items-center justify-center mb-2">2</span>
-        <p class="font-bold text-slate-800 mb-1">Registro Mobile</p>
-        <p class="text-slate-500">Se houver divergência, motorista abre o protocolo no app com fotos.</p>
+      <!-- Etapa 2 -->
+      <div class="relative bg-slate-50 p-5 rounded-2xl border border-slate-200/60 hover:bg-slate-100/60 transition">
+        <div class="flex items-center space-x-3 mb-3">
+          <div class="w-9 h-9 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-sm">
+            2
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Análise de Procedência</h3>
+            <span class="text-[10px] text-blue-700 font-semibold">Auditoria da Operação</span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          A equipe de operações e armazém investiga fisicamente a falta, avaria ou lote, registrando o parecer técnico no histórico auditável.
+        </p>
       </div>
 
-      <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
-        <span class="w-6 h-6 rounded-full bg-blue-600 text-white font-bold inline-flex items-center justify-center mb-2">3</span>
-        <p class="font-bold text-slate-800 mb-1">Triagem Expressa</p>
-        <p class="text-slate-500">Mesa Suzano encaminha para Fiscal, Armazém, Qualidade ou Comercial.</p>
+      <!-- Etapa 3 -->
+      <div class="relative bg-slate-50 p-5 rounded-2xl border border-slate-200/60 hover:bg-slate-100/60 transition">
+        <div class="flex items-center space-x-3 mb-3">
+          <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white font-black text-sm flex items-center justify-center shadow-sm">
+            3
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Finalizar FO</h3>
+            <span class="text-[10px] text-emerald-700 font-semibold">Resolução & Ressarcimento</span>
+          </div>
+        </div>
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Conclusão formal da FO com validação fiscal para que o cliente seja tempestivamente ressarcido, encerrando o ciclo com transparência.
+        </p>
       </div>
 
-      <div class="bg-slate-50 p-4 rounded-lg border border-slate-100">
-        <span class="w-6 h-6 rounded-full bg-emerald-700 text-white font-bold inline-flex items-center justify-center mb-2">4</span>
-        <p class="font-bold text-slate-800 mb-1">Tratativa & Saída</p>
-        <p class="text-slate-500">Troca, devolução autorizada ou acerto fiscal antes da liberação do caminhão.</p>
-      </div>
     </div>
   </div>
 
