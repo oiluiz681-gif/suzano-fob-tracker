@@ -9,11 +9,11 @@
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
     <div>
       <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center space-x-2">
-        <span>Mesa de Triagem & Operações FOB</span>
+        <span>Mesa de Operações & Devoluções FOB</span>
         <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">Tempo Real</span>
       </h1>
       <p class="text-xs text-slate-500">
-        Gestão integrada das divergências reportadas nas docas dos armazéns Suzano.
+        Gestão integrada dos fluxos de Área Devolução, Análise de Procedência e Finalização de FO.
       </p>
     </div>
 
@@ -35,7 +35,7 @@
     
     <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
       <div>
-        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Registrado</p>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total de Protocolos</p>
         <p class="text-2xl font-black text-slate-800">{{ total_geral }}</p>
       </div>
       <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
@@ -45,17 +45,17 @@
 
     <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between">
       <div>
-        <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Aguardando Triagem</p>
+        <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Área Devolução (Novos)</p>
         <p class="text-2xl font-black text-amber-700">{{ total_novos }}</p>
       </div>
       <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-        <i data-lucide="clock" class="w-5 h-5"></i>
+        <i data-lucide="inbox" class="w-5 h-5"></i>
       </div>
     </div>
 
     <div class="bg-white p-4 rounded-xl border border-blue-200 shadow-sm flex items-center justify-between">
       <div>
-        <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Em Análise / Filas</p>
+        <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Em Análise / Tratativa</p>
         <p class="text-2xl font-black text-blue-700">{{ total_analise }}</p>
       </div>
       <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
@@ -65,7 +65,7 @@
 
     <div class="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm flex items-center justify-between">
       <div>
-        <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Concluídos</p>
+        <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">FOs Concluídas</p>
         <p class="text-2xl font-black text-emerald-700">{{ total_concluidos }}</p>
       </div>
       <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -75,45 +75,43 @@
 
   </div>
 
-  <!-- Barra de Filtros & Abas das Filas Especializadas -->
+  <!-- Barra de Filtros & Abas das Filas Oficiais Suzano -->
   <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-6 overflow-hidden">
     
     <!-- Abas de Filas -->
     <div class="flex overflow-x-auto border-b border-slate-200 p-2 gap-1 bg-slate-50/70">
       <a href="/painel?fila=Todas&status={{ filtro_status }}&busca={{ busca }}"
          class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Todas' %}bg-white text-emerald-800 shadow-sm border border-slate-200{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="inbox" class="w-3.5 h-3.5"></i>
-        <span>Todas</span>
+        <i data-lucide="list" class="w-3.5 h-3.5"></i>
+        <span>Todas as Filas</span>
       </a>
 
-      <a href="/painel?fila=Triagem Inicial&status={{ filtro_status }}&busca={{ busca }}"
-         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Triagem Inicial' %}bg-amber-500 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
-        <span>Triagem Inicial ({{ contagem_filas['Triagem Inicial'] }})</span>
+      <!-- 1. Fila Área Devolução -->
+      <a href="/painel?fila=Área de Devolução&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Área de Devolução' %}bg-amber-500 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+        <span>Área Devolução ({{ contagem_filas['Área de Devolução'] }})</span>
       </a>
 
+      <!-- 2. Fila Análise de Procedência -->
+      <a href="/painel?fila=Análise de Procedência&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Análise de Procedência' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="search-check" class="w-3.5 h-3.5"></i>
+        <span>Análise de Procedência ({{ contagem_filas['Análise de Procedência'] }})</span>
+      </a>
+
+      <!-- 3. Fila Finalizar FO -->
+      <a href="/painel?fila=Finalizar FO&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Finalizar FO' %}bg-purple-600 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5"></i>
+        <span>Finalizar FO ({{ contagem_filas['Finalizar FO'] }})</span>
+      </a>
+
+      <!-- Filas Especializadas Adicionais -->
       <a href="/painel?fila=Fiscal&status={{ filtro_status }}&busca={{ busca }}"
          class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Fiscal' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="file-check" class="w-3.5 h-3.5"></i>
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
         <span>Fiscal ({{ contagem_filas['Fiscal'] }})</span>
-      </a>
-
-      <a href="/painel?fila=Armazém / Doca&status={{ filtro_status }}&busca={{ busca }}"
-         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Armazém / Doca' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="warehouse" class="w-3.5 h-3.5"></i>
-        <span>Armazém / Doca ({{ contagem_filas['Armazém / Doca'] }})</span>
-      </a>
-
-      <a href="/painel?fila=Qualidade&status={{ filtro_status }}&busca={{ busca }}"
-         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Qualidade' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="microscope" class="w-3.5 h-3.5"></i>
-        <span>Qualidade ({{ contagem_filas['Qualidade'] }})</span>
-      </a>
-
-      <a href="/painel?fila=Comercial&status={{ filtro_status }}&busca={{ busca }}"
-         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Comercial' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="briefcase" class="w-3.5 h-3.5"></i>
-        <span>Comercial ({{ contagem_filas['Comercial'] }})</span>
       </a>
     </div>
 
@@ -156,8 +154,8 @@
     {% if itens|length == 0 %}
       <div class="p-12 text-center text-slate-400">
         <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-slate-300"></i>
-        <p class="text-sm font-semibold text-slate-600">Nenhuma ocorrência encontrada nesta fila.</p>
-        <p class="text-xs mt-1">Todos os protocolos desta seleção já foram tratados ou não há registros.</p>
+        <p class="text-sm font-semibold text-slate-600">Nenhum protocolo nesta fila no momento.</p>
+        <p class="text-xs mt-1">Todos os protocolos já foram direcionados ou não há registros pendentes.</p>
       </div>
     {% else %}
 
@@ -215,22 +213,24 @@
 
               <!-- Fila Atual -->
               <td class="py-3 px-4">
-                {% if it.fila_atual == 'Triagem Inicial' %}
+                {% if it.fila_atual == 'Área de Devolução' or it.fila_atual == 'Área Devolução' %}
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
                     <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>
-                    {{ it.fila_atual }}
+                    Área Devolução
+                  </span>
+                {% elif it.fila_atual == 'Análise de Procedência' %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                    <i data-lucide="search" class="w-3 h-3 mr-1 text-blue-600"></i>
+                    Análise Procedência
+                  </span>
+                {% elif it.fila_atual == 'Finalizar FO' %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 text-purple-800 border border-purple-200">
+                    <i data-lucide="check" class="w-3 h-3 mr-1 text-purple-600"></i>
+                    Finalizar FO
                   </span>
                 {% elif it.fila_atual == 'Fiscal' %}
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    {{ it.fila_atual }}
-                  </span>
-                {% elif it.fila_atual == 'Armazém / Doca' %}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
-                    {{ it.fila_atual }}
-                  </span>
-                {% elif it.fila_atual == 'Qualidade' %}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-50 text-cyan-800 border border-cyan-200">
-                    {{ it.fila_atual }}
+                    Fiscal
                   </span>
                 {% else %}
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
