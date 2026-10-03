@@ -23,6 +23,7 @@ def init_db():
         protocolo TEXT UNIQUE NOT NULL,
         nf_numero TEXT NOT NULL,
         chave_nfe TEXT,
+        centro_origem TEXT DEFAULT '',
         transportadora TEXT NOT NULL,
         placa_veiculo TEXT NOT NULL,
         motorista_nome TEXT NOT NULL,
@@ -40,6 +41,12 @@ def init_db():
         updated_at TEXT NOT NULL
     );
     """)
+
+    # Migração automática caso o campo centro_origem ainda não exista
+    cursor.execute("PRAGMA table_info(ocorrencias)")
+    colunas = [c["name"] for c in cursor.fetchall()]
+    if "centro_origem" not in colunas:
+        cursor.execute("ALTER TABLE ocorrencias ADD COLUMN centro_origem TEXT DEFAULT ''")
     
     # Tabela de histórico / auditoria de tratativas
     cursor.execute("""
@@ -71,7 +78,7 @@ def seed_dados(conn):
     exemplos = [
         (
             "FOB-2026-00101", "NF 482910", "35260900000000000192550010004829101000482911",
-            "TransLog Express", "ABC-4D89", "Carlos Eduardo Mendes", "(11) 98765-4321",
+            "1112 - CD Suzano UNBC", "TransLog Express", "ABC-4D89", "Carlos Eduardo Mendes", "(11) 98765-4321",
             "Gráfica & Editora Alvorada Ltda", "12.345.678/0001-90",
             "Avaria Física / Embalagem",
             "Ao posicionar os paletes de bobinas de papel na doca 03, constatou-se impacto lateral com rasgo no papel kraft e umidade visível.",
@@ -80,7 +87,7 @@ def seed_dados(conn):
         ),
         (
             "FOB-2026-00102", "NF 482933", "35260900000000000192550010004829331000482933",
-            "Rápido Rodoviário Sul", "XYZ-9F12", "Marcos Vinicius Silva", "(19) 97123-8899",
+            "2100 - Unidade Mucuri BA", "Rápido Rodoviário Sul", "XYZ-9F12", "Marcos Vinicius Silva", "(19) 97123-8899",
             "Embalagens Progresso S/A", "98.765.432/0001-10",
             "Falta de Volumes / Paletes",
             "NF faturada com 24 fardos de celulose solúvel, porém na conferência física da doca foram disponibilizados apenas 22 fardos. Faltam 2 fardos.",
@@ -89,20 +96,11 @@ def seed_dados(conn):
         ),
         (
             "FOB-2026-00103", "NF 483005", "35260900000000000192550010004830051000483005",
-            "TransCargas Brasil", "JHG-2A33", "Roberto Santos", "(31) 99887-1122",
+            "5400 - Unidade Limeira SP", "TransCargas Brasil", "JHG-2A33", "Roberto Santos", "(31) 99887-1122",
             "Cartonagem Horizonte", "44.555.666/0001-22",
             "Divergência Fiscal / Dados da NF",
             "Falta confirmada pela operação. Protocolo encaminhado para encerramento de FO e ressarcimento financeiro ao cliente.",
             "Finalizar FO", "Em Análise", "Urgente",
-            json.dumps([]), None, agora, agora
-        ),
-        (
-            "FOB-2026-00104", "NF 483120", "",
-            "Paulista Logística", "KLE-7711", "Fernando Dias", "(11) 98111-2233",
-            "Indústria de Papel Millennium", "55.666.777/0001-44",
-            "Mercadoria Trocada / Lote Incorreto",
-            "Lote constante na etiqueta do palete difere do certificado de qualidade que acompanha o romaneio.",
-            "Área de Devolução", "Novo", "Normal",
             json.dumps([]), None, agora, agora
         )
     ]
@@ -110,11 +108,11 @@ def seed_dados(conn):
     for ex in exemplos:
         cursor.execute("""
         INSERT INTO ocorrencias (
-            protocolo, nf_numero, chave_nfe, transportadora, placa_veiculo,
+            protocolo, nf_numero, chave_nfe, centro_origem, transportadora, placa_veiculo,
             motorista_nome, motorista_telefone, cliente_nome, cliente_cnpj,
             tipo_divergencia, descricao, fila_atual, status, prioridade,
             fotos, resolucao_final, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, ex)
         
         ocorrencia_id = cursor.lastrowid
