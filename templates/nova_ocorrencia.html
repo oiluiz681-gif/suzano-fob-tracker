@@ -1,209 +1,278 @@
 {% extends "base.html" %}
 
-{% block title %}Abrir Ocorrência FOB | Suzano{% endblock %}
+{% block title %}Abertura de Ocorrência FOB | Suzano{% endblock %}
 
 {% block content %}
-<div class="max-w-2xl mx-auto py-4">
+<div class="max-w-3xl mx-auto py-6">
 
-  <!-- Cabeçalho do Formulário -->
-  <div class="mb-6">
-    <a href="/" class="inline-flex items-center space-x-1 text-xs text-slate-500 hover:text-slate-800 mb-2">
-      <i data-lucide="chevron-left" class="w-4 h-4"></i>
-      <span>Voltar ao início</span>
+  <!-- CABEÇALHO EXECUTIVO COM BADGE E GRADIENTE SUAVE -->
+  <div class="mb-8">
+    <a href="/" class="inline-flex items-center space-x-1.5 text-xs font-semibold text-slate-500 hover:text-emerald-700 transition mb-3 group">
+      <i data-lucide="arrow-left" class="w-4 h-4 group-hover:-translate-x-1 transition-transform"></i>
+      <span>Voltar ao portal principal</span>
     </a>
-    <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Registro de Divergência FOB</h1>
-    <p class="text-xs text-slate-500">
-      Preencha as informações da carga coletada e tire fotos das evidências na doca.
+    
+    <div class="flex items-center space-x-2.5 mb-2">
+      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+        <span class="w-1.5 h-1.5 rounded-full bg-emerald-600 mr-1.5 animate-pulse"></span>
+        Expedição & Armazéns FOB
+      </span>
+      <span class="text-xs text-slate-400">•</span>
+      <span class="text-xs font-medium text-slate-500">Direcionamento Expresso: Área Devolução</span>
+    </div>
+
+    <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+      Registro Oficial de Divergência FOB
+    </h1>
+    <p class="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+      Preencha os dados da carga e anexe as fotos da doca. O protocolo será emitido instantaneamente para triagem da Suzano.
     </p>
   </div>
 
-  <!-- Card do Formulário -->
-  <form action="/nova-ocorrencia" method="POST" enctype="multipart/form-data" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden" id="form-ocorrencia">
+  <!-- FORMULÁRIO EXECUTIVO EM CARDS BLINDADOS -->
+  <form action="/nova-ocorrencia" method="POST" enctype="multipart/form-data" class="space-y-6" id="form-ocorrencia">
 
-    <!-- Seção 1: Dados da Carga / NF -->
-    <div class="p-6 border-b border-slate-100">
-      <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center space-x-2">
-        <i data-lucide="file-text" class="w-4 h-4 text-emerald-600"></i>
-        <span>1. Identificação da Carga</span>
-      </h2>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <!-- SEÇÃO 1: CENTRO DE ORIGEM E IDENTIFICAÇÃO DA CARGA -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+      
+      <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-slate-100">
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
+          <i data-lucide="building-2" class="w-5 h-5"></i>
+        </div>
         <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1" for="nf_numero">
-            Número da Nota Fiscal / Romaneio <span class="text-red-500">*</span>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">1. Origem e Dados da Carga</h2>
+          <p class="text-xs text-slate-500">Selecione a unidade emissora e os dados da nota fiscal</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        
+        <!-- DROPBOX OBRIGATÓRIO: CENTRO DE ORIGEM DA NF -->
+        <div class="p-4 rounded-2xl bg-gradient-to-r from-emerald-50/60 to-slate-50 border border-emerald-200/80">
+          <label class="block text-xs font-bold text-emerald-950 mb-1.5 flex items-center justify-between" for="centro_origem">
+            <span class="flex items-center space-x-1.5">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-emerald-600"></i>
+              <span>Centro de Origem da NF (Fábrica / CD Suzano) <span class="text-rose-500">*</span></span>
+            </span>
+            <span class="text-[10px] text-emerald-700 font-normal">Selecione na lista</span>
           </label>
-          <input type="text" name="nf_numero" id="nf_numero" required placeholder="Ex: NF 482910"
-                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+          <div class="relative">
+            <select name="centro_origem" id="centro_origem" required
+                    class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-emerald-300 rounded-xl bg-white font-semibold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 shadow-sm">
+              <option value="" disabled selected>-- Selecione o Centro de Origem Emissor da Carga --</option>
+              {% for cod, nome in centros.items() %}
+                <option value="{{ cod }} - {{ nome }}">{{ cod }} - {{ nome }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <p class="text-[11px] text-slate-500 mt-1.5">
+            Indique a unidade industrial ou centro de distribuição onde a carga foi faturada.
+          </p>
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1" for="chave_nfe">
-            Chave de Acesso NF-e (44 dígitos) <span class="text-slate-400 font-normal">(opcional)</span>
-          </label>
-          <input type="text" name="chave_nfe" id="chave_nfe" maxlength="44" placeholder="Chave impressa no DANFE"
-                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+        <!-- Grade de Campos da Carga -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1" for="nf_numero">
+              Número da Nota Fiscal / Romaneio <span class="text-rose-500">*</span>
+            </label>
+            <input type="text" name="nf_numero" id="nf_numero" required placeholder="Ex: NF 482910"
+                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1" for="chave_nfe">
+              Chave de Acesso NF-e (44 dígitos) <span class="text-slate-400 font-normal">(opcional)</span>
+            </label>
+            <input type="text" name="chave_nfe" id="chave_nfe" maxlength="44" placeholder="Código de barras do DANFE"
+                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-mono">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1" for="transportadora">
+              Transportadora / Autônomo <span class="text-rose-500">*</span>
+            </label>
+            <input type="text" name="transportadora" id="transportadora" required placeholder="Nome da transportadora coletora"
+                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1" for="placa_veiculo">
+              Placa do Veículo (Cavalo/Carreta) <span class="text-rose-500">*</span>
+            </label>
+            <input type="text" name="placa_veiculo" id="placa_veiculo" required placeholder="ABC-1D23"
+                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm uppercase font-mono font-bold border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1" for="cliente_nome">
+              Cliente Destinatário <span class="text-rose-500">*</span>
+            </label>
+            <input type="text" name="cliente_nome" id="cliente_nome" required placeholder="Razão Social do Cliente"
+                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 mb-1" for="cliente_cnpj">
+              CNPJ do Cliente <span class="text-slate-400 font-normal">(opcional)</span>
+            </label>
+            <input type="text" name="cliente_cnpj" id="cliente_cnpj" placeholder="00.000.000/0001-00"
+                   class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 font-mono">
+          </div>
+
         </div>
 
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1" for="transportadora">
-            Transportadora / Autônomo <span class="text-red-500">*</span>
-          </label>
-          <input type="text" name="transportadora" id="transportadora" required placeholder="Nome da transportadora"
-                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1" for="placa_veiculo">
-            Placa do Veículo (Cavalo/Carreta) <span class="text-red-500">*</span>
-          </label>
-          <input type="text" name="placa_veiculo" id="placa_veiculo" required placeholder="ABC1D23"
-                 class="w-full px-3 py-2 text-sm uppercase border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1" for="cliente_nome">
-            Cliente Destinatário <span class="text-red-500">*</span>
-          </label>
-          <input type="text" name="cliente_nome" id="cliente_nome" required placeholder="Razão Social do Cliente"
-                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-        </div>
-
-        <div>
-          <label class="block text-xs font-semibold text-slate-700 mb-1" for="cliente_cnpj">
-            CNPJ do Cliente <span class="text-slate-400 font-normal">(opcional)</span>
-          </label>
-          <input type="text" name="cliente_cnpj" id="cliente_cnpj" placeholder="00.000.000/0001-00"
-                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
-        </div>
       </div>
     </div>
 
-    <!-- Seção 2: Contato de quem está no armazém -->
-    <div class="p-6 border-b border-slate-100 bg-slate-50/50">
-      <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-4 flex items-center space-x-2">
-        <i data-lucide="user" class="w-4 h-4 text-emerald-600"></i>
-        <span>2. Contato do Motorista no Armazém</span>
-      </h2>
+    <!-- SEÇÃO 2: MOTORISTA / CONFERENTE NA DOCA -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+      
+      <div class="flex items-center space-x-3 mb-6 pb-4 border-b border-slate-100">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center font-bold">
+          <i data-lucide="user-check" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">2. Responsável pelo Registro na Doca</h2>
+          <p class="text-xs text-slate-500">Informações de contato de quem presenciou a divergência</p>
+        </div>
+      </div>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1" for="motorista_nome">
-            Nome do Motorista / Conferente <span class="text-red-500">*</span>
+            Nome do Motorista / Conferente <span class="text-rose-500">*</span>
           </label>
           <input type="text" name="motorista_nome" id="motorista_nome" required placeholder="Nome completo"
-                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                 class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
         </div>
 
         <div>
           <label class="block text-xs font-semibold text-slate-700 mb-1" for="motorista_telefone">
-            Celular / WhatsApp para Notificação <span class="text-red-500">*</span>
+            Celular / WhatsApp para Notificações <span class="text-rose-500">*</span>
           </label>
           <input type="tel" name="motorista_telefone" id="motorista_telefone" required placeholder="(XX) 99999-9999"
-                 class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+                 class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+          <span class="text-[11px] text-slate-400 mt-1 block">O protocolo de acompanhamento será vinculado a este número.</span>
         </div>
       </div>
     </div>
 
-    <!-- Seção 3: Tipo de Ocorrência -->
-    <div class="p-6 border-b border-slate-100">
-      <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center space-x-2">
-        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-500"></i>
-        <span>3. Motivo da Divergência / Devolução</span>
-      </h2>
-      <p class="text-xs text-slate-500 mb-4">Selecione a categoria que melhor descreve o problema identificado:</p>
+    <!-- SEÇÃO 3: TIPO DE DIVERGÊNCIA / DEVOLUÇÃO -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+      
+      <div class="flex items-center space-x-3 mb-4 pb-4 border-b border-slate-100">
+        <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold">
+          <i data-lucide="alert-octagon" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">3. Motivo da Ocorrência</h2>
+          <p class="text-xs text-slate-500">Selecione o tipo de divergência constatada na carga</p>
+        </div>
+      </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
-        <label class="border border-slate-200 rounded-xl p-3 flex items-start space-x-3 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/30 transition">
-          <input type="radio" name="tipo_divergencia" value="Avaria Física / Embalagem" required class="mt-1 text-emerald-600 focus:ring-emerald-500">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
+        
+        <label class="border-2 border-slate-200 hover:border-emerald-500 rounded-2xl p-4 flex items-start space-x-3 cursor-pointer hover:bg-emerald-50/20 transition group">
+          <input type="radio" name="tipo_divergencia" value="Falta de Volumes / Paletes" required class="mt-1 text-emerald-600 focus:ring-emerald-500">
           <div>
-            <span class="block text-xs font-bold text-slate-800">Avaria Física / Embalagem</span>
-            <span class="block text-xs text-slate-500">Bobina rasgada, palete quebrado, produto molhado ou tombado.</span>
+            <span class="block text-xs font-bold text-slate-900 group-hover:text-emerald-800">Falta de Volumes / Paletes</span>
+            <span class="block text-[11px] text-slate-500 mt-0.5">Quantidade física na doca é menor que o faturado na NF.</span>
           </div>
         </label>
 
-        <label class="border border-slate-200 rounded-xl p-3 flex items-start space-x-3 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/30 transition">
-          <input type="radio" name="tipo_divergencia" value="Falta de Volumes / Paletes" class="mt-1 text-emerald-600 focus:ring-emerald-500">
+        <label class="border-2 border-slate-200 hover:border-emerald-500 rounded-2xl p-4 flex items-start space-x-3 cursor-pointer hover:bg-emerald-50/20 transition group">
+          <input type="radio" name="tipo_divergencia" value="Avaria Física / Embalagem" class="mt-1 text-emerald-600 focus:ring-emerald-500">
           <div>
-            <span class="block text-xs font-bold text-slate-800">Falta de Volumes / Paletes</span>
-            <span class="block text-xs text-slate-500">Quantidade física na doca é menor que a quantidade na NF.</span>
+            <span class="block text-xs font-bold text-slate-900 group-hover:text-emerald-800">Avaria Física / Embalagem</span>
+            <span class="block text-[11px] text-slate-500 mt-0.5">Bobina rasgada, fardo molhado, palete tombado ou danificado.</span>
           </div>
         </label>
 
-        <label class="border border-slate-200 rounded-xl p-3 flex items-start space-x-3 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/30 transition">
+        <label class="border-2 border-slate-200 hover:border-emerald-500 rounded-2xl p-4 flex items-start space-x-3 cursor-pointer hover:bg-emerald-50/20 transition group">
           <input type="radio" name="tipo_divergencia" value="Mercadoria Trocada / Lote Incorreto" class="mt-1 text-emerald-600 focus:ring-emerald-500">
           <div>
-            <span class="block text-xs font-bold text-slate-800">Mercadoria Trocada / Lote</span>
-            <span class="block text-xs text-slate-500">Produto diferente da NF ou etiqueta/lote divergente.</span>
+            <span class="block text-xs font-bold text-slate-900 group-hover:text-emerald-800">Mercadoria Trocada / Lote</span>
+            <span class="block text-[11px] text-slate-500 mt-0.5">Lote da etiqueta diverge do certificado ou produto trocado.</span>
           </div>
         </label>
 
-        <label class="border border-slate-200 rounded-xl p-3 flex items-start space-x-3 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/30 transition">
+        <label class="border-2 border-slate-200 hover:border-emerald-500 rounded-2xl p-4 flex items-start space-x-3 cursor-pointer hover:bg-emerald-50/20 transition group">
           <input type="radio" name="tipo_divergencia" value="Sobra / Excesso de Carga" class="mt-1 text-emerald-600 focus:ring-emerald-500">
           <div>
-            <span class="block text-xs font-bold text-slate-800">Sobra / Excesso de Carga</span>
-            <span class="block text-xs text-slate-500">Quantidade física maior que a nota ou carga a mais no veículo.</span>
+            <span class="block text-xs font-bold text-slate-900 group-hover:text-emerald-800">Sobra / Excesso de Carga</span>
+            <span class="block text-[11px] text-slate-500 mt-0.5">Volumes físicos a mais do que o discriminado na nota.</span>
           </div>
         </label>
 
-        <label class="border border-slate-200 rounded-xl p-3 flex items-start space-x-3 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/30 transition">
+        <label class="border-2 border-slate-200 hover:border-emerald-500 rounded-2xl p-4 flex items-start space-x-3 cursor-pointer hover:bg-emerald-50/20 transition group">
           <input type="radio" name="tipo_divergencia" value="Divergência Fiscal / Dados da NF" class="mt-1 text-emerald-600 focus:ring-emerald-500">
           <div>
-            <span class="block text-xs font-bold text-slate-800">Divergência Fiscal / Dados da NF</span>
-            <span class="block text-xs text-slate-500">Erro de CNPJ, endereço de entrega, valor ou recusa de canhoto.</span>
+            <span class="block text-xs font-bold text-slate-900 group-hover:text-emerald-800">Divergência Fiscal / Dados da NF</span>
+            <span class="block text-[11px] text-slate-500 mt-0.5">Inconsistência de CNPJ, endereço ou recusa no canhoto.</span>
           </div>
         </label>
 
-        <label class="border border-slate-200 rounded-xl p-3 flex items-start space-x-3 cursor-pointer hover:border-emerald-500 hover:bg-emerald-50/30 transition">
-          <input type="radio" name="tipo_divergencia" value="Outros Motivos" class="mt-1 text-emerald-600 focus:ring-emerald-500">
+        <label class="border-2 border-slate-200 hover:border-emerald-500 rounded-2xl p-4 flex items-start space-x-3 cursor-pointer hover:bg-emerald-50/20 transition group">
+          <input type="radio" name="tipo_divergencia" value="Outros Motivos Operacionais" class="mt-1 text-emerald-600 focus:ring-emerald-500">
           <div>
-            <span class="block text-xs font-bold text-slate-800">Outros Motivos</span>
-            <span class="block text-xs text-slate-500">Outras inconsistências operacionais não listadas.</span>
+            <span class="block text-xs font-bold text-slate-900 group-hover:text-emerald-800">Outros Motivos Operacionais</span>
+            <span class="block text-[11px] text-slate-500 mt-0.5">Outras divergências identificadas durante a conferência.</span>
           </div>
         </label>
+
       </div>
 
       <div>
         <label class="block text-xs font-semibold text-slate-700 mb-1" for="descricao">
-          Descrição Detalhada do Problema <span class="text-red-500">*</span>
+          Descrição Detalhada dos Fatos <span class="text-rose-500">*</span>
         </label>
-        <textarea name="descricao" id="descricao" rows="3" required placeholder="Descreva exatamente o que foi constatado na doca (ex: 2 paletes molhados na doca 4, faltando 5 fardos...)"
-                  class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+        <textarea name="descricao" id="descricao" rows="3" required placeholder="Descreva exatamente o que foi constatado (ex: Na doca 03, conferência identificou falta física de 2 fardos de celulose. NF marcava 24, foram embarcados 22)..."
+                  class="w-full px-3.5 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
       </div>
+
     </div>
 
-    <!-- Seção 4: Evidências Fotográficas -->
-    <div class="p-6 bg-slate-50/80">
-      <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2 flex items-center space-x-2">
-        <i data-lucide="camera" class="w-4 h-4 text-emerald-600"></i>
-        <span>4. Fotos da Divergência na Doca</span>
-      </h2>
-      <p class="text-xs text-slate-500 mb-4">
-        Tire fotos nítidas do produto, da etiqueta do palete/fardo e do romaneio para agilizar a liberação da Suzano.
-      </p>
-
-      <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-6 text-center cursor-pointer bg-white transition" onclick="document.getElementById('fotos-input').click()">
-        <input type="file" name="fotos" id="fotos-input" multiple accept="image/*" class="hidden" onchange="previewImages(event)">
-        <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
-          <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+    <!-- SEÇÃO 4: EVIDÊNCIAS FOTOGRÁFICAS -->
+    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/90 shadow-sm hover:shadow-md transition-shadow">
+      
+      <div class="flex items-center space-x-3 mb-4 pb-4 border-b border-slate-100">
+        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-700 flex items-center justify-center font-bold">
+          <i data-lucide="camera" class="w-5 h-5"></i>
         </div>
-        <p class="text-sm font-semibold text-slate-700">Clique para Tirar Foto ou Selecionar da Galeria</p>
-        <p class="text-xs text-slate-400 mt-1">Formatos aceitos: JPG, PNG, WEBP (Permite múltiplos arquivos)</p>
+        <div>
+          <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider">4. Evidências Fotográficas na Doca</h2>
+          <p class="text-xs text-slate-500">Fotografe as etiquetas dos paletes, romaneio e produtos avariados</p>
+        </div>
       </div>
 
-      <!-- Preview das imagens selecionadas -->
+      <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl p-8 text-center cursor-pointer bg-slate-50/50 hover:bg-emerald-50/20 transition-all duration-300" onclick="document.getElementById('fotos-input').click()">
+        <input type="file" name="fotos" id="fotos-input" multiple accept="image/*" class="hidden" onchange="previewImages(event)">
+        <div class="w-14 h-14 bg-emerald-100/70 text-emerald-700 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-inner">
+          <i data-lucide="upload-cloud" class="w-7 h-7"></i>
+        </div>
+        <p class="text-sm font-bold text-slate-800">Tirar Foto com a Câmera ou Selecionar Arquivos</p>
+        <p class="text-xs text-slate-400 mt-1">Formatos aceitos: JPG, PNG, WEBP (Permite múltiplas fotos)</p>
+      </div>
+
+      <!-- Preview Dinâmico das Fotos -->
       <div id="preview-container" class="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-4 hidden"></div>
     </div>
 
-    <!-- Botão de Submissão -->
-    <div class="p-6 bg-white border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <p class="text-xs text-slate-500">
-        <i data-lucide="info" class="w-3.5 h-3.5 inline text-emerald-600 mr-1"></i>
-        O protocolo será enviado imediatamente para a mesa de operações da Suzano.
-      </p>
+    <!-- BOTÃO FINAL DE SUBMISSÃO -->
+    <div class="bg-gradient-to-r from-slate-900 to-emerald-950 p-6 sm:p-8 rounded-3xl text-white flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+      <div class="flex items-center space-x-3 text-xs text-slate-300">
+        <div class="w-8 h-8 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+          <i data-lucide="shield-check" class="w-4 h-4"></i>
+        </div>
+        <span>O protocolo será encaminhado diretamente para a fila <strong>Área Devolução</strong>.</span>
+      </div>
+
       <button type="submit" id="btn-submit"
-              class="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2">
-        <i data-lucide="send" class="w-4 h-4"></i>
-        <span>Enviar Ocorrência & Gerar Protocolo</span>
+              class="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold text-sm rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center space-x-2 shrink-0 group">
+        <span>Transmitir Ocorrência FOB</span>
+        <i data-lucide="send" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
       </button>
     </div>
 
@@ -221,13 +290,16 @@
 
     if (files.length > 0) {
       container.classList.remove('hidden');
-      Array.from(files).forEach(file => {
+      Array.from(files).forEach((file, index) => {
         if (file.type.startsWith('image/')) {
           const reader = new FileReader();
           reader.onload = function(e) {
             const div = document.createElement('div');
-            div.className = 'relative rounded-lg overflow-hidden border border-slate-200 aspect-square shadow-sm';
-            div.innerHTML = `<img src="${e.target.result}" class="w-full h-full object-cover">`;
+            div.className = 'relative rounded-xl overflow-hidden border border-slate-200 aspect-square shadow-sm bg-slate-100 group';
+            div.innerHTML = `
+              <img src="${e.target.result}" class="w-full h-full object-cover">
+              <span class="absolute bottom-1 right-1 bg-slate-900/70 text-white text-[9px] px-1.5 py-0.5 rounded font-mono font-bold">#${index+1}</span>
+            `;
             container.appendChild(div);
           }
           reader.readAsDataURL(file);
@@ -241,7 +313,7 @@
   document.getElementById('form-ocorrencia').addEventListener('submit', function() {
     const btn = document.getElementById('btn-submit');
     btn.disabled = true;
-    btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Enviando Ocorrência...`;
+    btn.innerHTML = `<svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-slate-950 inline" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg> Transmitindo Ocorrência...`;
   });
 </script>
 {% endblock %}
