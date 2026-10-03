@@ -50,9 +50,15 @@
         </h2>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          
           <div class="p-3 bg-slate-50 rounded-lg">
             <span class="text-slate-400 block font-medium">Nota Fiscal / Romaneio</span>
             <span class="font-bold text-slate-900 text-sm">{{ ocorrencia.nf_numero }}</span>
+            {% if ocorrencia.centro_origem %}
+              <span class="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 block truncate mt-1" title="{{ ocorrencia.centro_origem }}">
+                📍 {{ ocorrencia.centro_origem }}
+              </span>
+            {% endif %}
             {% if ocorrencia.chave_nfe %}
               <span class="text-[10px] text-slate-400 font-mono block truncate mt-1" title="{{ ocorrencia.chave_nfe }}">Chave: {{ ocorrencia.chave_nfe }}</span>
             {% endif %}
@@ -201,9 +207,6 @@
               <!-- Filas de Apoio -->
               <option value="Fiscal" {% if ocorrencia.fila_atual == 'Fiscal' %}selected{% endif %}>
                 ⚖️ Fiscal (NF Devolução / Canhoto / Carta Correção)
-              </option>
-              <option value="Qualidade" {% if ocorrencia.fila_atual == 'Qualidade' %}selected{% endif %}>
-                🔬 Qualidade (Laudo Técnico / Avaria)
               </option>
             </select>
           </div>
