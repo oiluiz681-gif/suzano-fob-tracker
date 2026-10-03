@@ -1,0 +1,278 @@
+{% extends "base.html" %}
+
+{% block title %}Painel de Operações & Triagem FOB | Suzano{% endblock %}
+
+{% block content %}
+<div class="py-4">
+
+  <!-- Cabeçalho do Painel -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center space-x-2">
+        <span>Mesa de Triagem & Operações FOB</span>
+        <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">Tempo Real</span>
+      </h1>
+      <p class="text-xs text-slate-500">
+        Gestão integrada das divergências reportadas nas docas dos armazéns Suzano.
+      </p>
+    </div>
+
+    <div class="flex items-center space-x-2">
+      <a href="/exportar-csv" class="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-xl border border-slate-300 shadow-sm transition flex items-center space-x-1.5">
+        <i data-lucide="download" class="w-4 h-4 text-slate-500"></i>
+        <span>Exportar Excel (CSV)</span>
+      </a>
+
+      <a href="/nova-ocorrencia" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center space-x-1.5">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        <span>Novo Protocolo</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Cards de Indicadores (KPIs) -->
+  <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+    
+    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Registrado</p>
+        <p class="text-2xl font-black text-slate-800">{{ total_geral }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
+        <i data-lucide="layers" class="w-5 h-5"></i>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl border border-amber-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-amber-600 uppercase tracking-wider">Aguardando Triagem</p>
+        <p class="text-2xl font-black text-amber-700">{{ total_novos }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
+        <i data-lucide="clock" class="w-5 h-5"></i>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl border border-blue-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-blue-600 uppercase tracking-wider">Em Análise / Filas</p>
+        <p class="text-2xl font-black text-blue-700">{{ total_analise }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+        <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+      </div>
+    </div>
+
+    <div class="bg-white p-4 rounded-xl border border-emerald-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Concluídos</p>
+        <p class="text-2xl font-black text-emerald-700">{{ total_concluidos }}</p>
+      </div>
+      <div class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
+        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Barra de Filtros & Abas das Filas Especializadas -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-6 overflow-hidden">
+    
+    <!-- Abas de Filas -->
+    <div class="flex overflow-x-auto border-b border-slate-200 p-2 gap-1 bg-slate-50/70">
+      <a href="/painel?fila=Todas&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Todas' %}bg-white text-emerald-800 shadow-sm border border-slate-200{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="inbox" class="w-3.5 h-3.5"></i>
+        <span>Todas</span>
+      </a>
+
+      <a href="/painel?fila=Triagem Inicial&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Triagem Inicial' %}bg-amber-500 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="alert-circle" class="w-3.5 h-3.5"></i>
+        <span>Triagem Inicial ({{ contagem_filas['Triagem Inicial'] }})</span>
+      </a>
+
+      <a href="/painel?fila=Fiscal&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Fiscal' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="file-check" class="w-3.5 h-3.5"></i>
+        <span>Fiscal ({{ contagem_filas['Fiscal'] }})</span>
+      </a>
+
+      <a href="/painel?fila=Armazém / Doca&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Armazém / Doca' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="warehouse" class="w-3.5 h-3.5"></i>
+        <span>Armazém / Doca ({{ contagem_filas['Armazém / Doca'] }})</span>
+      </a>
+
+      <a href="/painel?fila=Qualidade&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Qualidade' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="microscope" class="w-3.5 h-3.5"></i>
+        <span>Qualidade ({{ contagem_filas['Qualidade'] }})</span>
+      </a>
+
+      <a href="/painel?fila=Comercial&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Comercial' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
+        <i data-lucide="briefcase" class="w-3.5 h-3.5"></i>
+        <span>Comercial ({{ contagem_filas['Comercial'] }})</span>
+      </a>
+    </div>
+
+    <!-- Barra de Busca e Filtro de Status -->
+    <div class="p-3 bg-white flex flex-col sm:flex-row gap-3 items-center justify-between">
+      <form action="/painel" method="GET" class="flex-1 w-full flex items-center space-x-2">
+        <input type="hidden" name="fila" value="{{ filtro_fila }}">
+        
+        <div class="relative flex-1">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input type="text" name="busca" value="{{ busca }}" placeholder="Filtrar por NF, Protocolo, Transportadora, Placa ou Cliente..."
+                 class="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
+        </div>
+
+        <select name="status" class="px-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500" onchange="this.form.submit()">
+          <option value="Todos" {% if filtro_status == 'Todos' %}selected{% endif %}>Todos os Status</option>
+          <option value="Novo" {% if filtro_status == 'Novo' %}selected{% endif %}>Novo</option>
+          <option value="Em Análise" {% if filtro_status == 'Em Análise' %}selected{% endif %}>Em Análise</option>
+          <option value="Devolução Autorizada" {% if filtro_status == 'Devolução Autorizada' %}selected{% endif %}>Devolução Autorizada</option>
+          <option value="Devolução Recusada" {% if filtro_status == 'Devolução Recusada' %}selected{% endif %}>Devolução Recusada</option>
+          <option value="Troca Imediata" {% if filtro_status == 'Troca Imediata' %}selected{% endif %}>Troca Imediata</option>
+          <option value="Concluído" {% if filtro_status == 'Concluído' %}selected{% endif %}>Concluído</option>
+        </select>
+
+        <button type="submit" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition">
+          Filtrar
+        </button>
+
+        {% if busca or filtro_fila != 'Todas' or filtro_status != 'Todos' %}
+          <a href="/painel" class="text-xs text-rose-600 hover:underline">Limpar</a>
+        {% endif %}
+      </form>
+    </div>
+
+  </div>
+
+  <!-- Tabela de Ocorrências -->
+  <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+    
+    {% if itens|length == 0 %}
+      <div class="p-12 text-center text-slate-400">
+        <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-slate-300"></i>
+        <p class="text-sm font-semibold text-slate-600">Nenhuma ocorrência encontrada nesta fila.</p>
+        <p class="text-xs mt-1">Todos os protocolos desta seleção já foram tratados ou não há registros.</p>
+      </div>
+    {% else %}
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
+              <th class="py-3 px-4">Protocolo / Data</th>
+              <th class="py-3 px-4">Nota Fiscal</th>
+              <th class="py-3 px-4">Cliente / Transportadora</th>
+              <th class="py-3 px-4">Motivo da Divergência</th>
+              <th class="py-3 px-4">Fila Atual</th>
+              <th class="py-3 px-4">Status</th>
+              <th class="py-3 px-4 text-right">Ação</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100">
+            {% for it in itens %}
+            <tr class="hover:bg-slate-50/80 transition">
+              
+              <!-- Protocolo & Data -->
+              <td class="py-3 px-4">
+                <span class="font-mono font-bold text-slate-900 block">{{ it.protocolo }}</span>
+                <span class="text-[11px] text-slate-400">{{ it.created_at[:16] }}</span>
+              </td>
+
+              <!-- NF & Placa -->
+              <td class="py-3 px-4">
+                <span class="font-bold text-emerald-800 block">{{ it.nf_numero }}</span>
+                <span class="text-[11px] text-slate-500 font-mono">{{ it.placa_veiculo }}</span>
+              </td>
+
+              <!-- Cliente & Transportadora -->
+              <td class="py-3 px-4">
+                <span class="font-semibold text-slate-800 block truncate max-w-xs">{{ it.cliente_nome }}</span>
+                <span class="text-[11px] text-slate-500">{{ it.transportadora }}</span>
+              </td>
+
+              <!-- Motivo & Fotos -->
+              <td class="py-3 px-4">
+                <span class="font-medium text-slate-800 block">{{ it.tipo_divergencia }}</span>
+                <div class="flex items-center space-x-2 mt-0.5">
+                  {% if it.fotos_list|length > 0 %}
+                    <span class="inline-flex items-center text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                      <i data-lucide="image" class="w-3 h-3 mr-1"></i> {{ it.fotos_list|length }} foto(s)
+                    </span>
+                  {% endif %}
+                  {% if it.prioridade == 'Alta' or it.prioridade == 'Urgente' %}
+                    <span class="inline-flex items-center text-[10px] text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded font-bold">
+                      {{ it.prioridade }}
+                    </span>
+                  {% endif %}
+                </div>
+              </td>
+
+              <!-- Fila Atual -->
+              <td class="py-3 px-4">
+                {% if it.fila_atual == 'Triagem Inicial' %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                    <span class="w-1.5 h-1.5 rounded-full bg-amber-500 mr-1.5 animate-pulse"></span>
+                    {{ it.fila_atual }}
+                  </span>
+                {% elif it.fila_atual == 'Fiscal' %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    {{ it.fila_atual }}
+                  </span>
+                {% elif it.fila_atual == 'Armazém / Doca' %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    {{ it.fila_atual }}
+                  </span>
+                {% elif it.fila_atual == 'Qualidade' %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-cyan-50 text-cyan-800 border border-cyan-200">
+                    {{ it.fila_atual }}
+                  </span>
+                {% else %}
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
+                    {{ it.fila_atual }}
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Status -->
+              <td class="py-3 px-4">
+                {% if it.status == 'Novo' %}
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">Novo</span>
+                {% elif it.status == 'Em Análise' %}
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-800">Em Análise</span>
+                {% elif it.status == 'Devolução Autorizada' %}
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800">Dev. Autorizada</span>
+                {% elif it.status == 'Devolução Recusada' %}
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800">Dev. Recusada</span>
+                {% elif it.status == 'Troca Imediata' %}
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-purple-100 text-purple-800">Troca Imediata</span>
+                {% elif it.status == 'Concluído' %}
+                  <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-200 text-slate-700">Concluído</span>
+                {% endif %}
+              </td>
+
+              <!-- Ação / Botão -->
+              <td class="py-3 px-4 text-right">
+                <a href="/painel/protocolo/{{ it.id }}" class="inline-flex items-center space-x-1 px-3 py-1.5 bg-slate-100 hover:bg-emerald-600 hover:text-white text-slate-700 font-semibold rounded-lg text-xs transition shadow-sm">
+                  <span>Tratar</span>
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </a>
+              </td>
+
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+    {% endif %}
+
+  </div>
+
+</div>
+{% endblock %}
