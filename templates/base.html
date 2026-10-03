@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Suzano | Gestão de Coletas FOB{% endblock %}</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            suzano: {
+              DEFAULT: '#005944',
+              dark: '#004131',
+              light: '#008558',
+              surface: '#F0F7F4',
+              accent: '#E6B00F'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
+
+  <!-- Header / Barra Superior -->
+  <header class="bg-suzano text-white shadow-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo e Título -->
+        <a href="/" class="flex items-center space-x-3 group">
+          <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition">
+            <i data-lucide="package-x" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-bold text-lg tracking-wide">SUZANO</span>
+              <span class="text-xs bg-emerald-700/80 px-2 py-0.5 rounded-full font-medium text-emerald-100 border border-emerald-500/30">FOB Tracker</span>
+            </div>
+            <p class="text-xs text-emerald-200/80">Tratativa de Divergências & Devoluções</p>
+          </div>
+        </a>
+
+        <!-- Navegação Desktop & Mobile -->
+        <nav class="flex items-center space-x-2 sm:space-x-4">
+          <a href="/nova-ocorrencia" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm">
+            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Nova Ocorrência</span>
+            <span class="sm:hidden">Nova</span>
+          </a>
+
+          <a href="/painel" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 text-white transition">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Mesa Suzano</span>
+            <span class="sm:hidden">Mesa</span>
+          </a>
+
+          <a href="/rastreio" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 text-emerald-100 transition">
+            <i data-lucide="search" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Consultar</span>
+          </a>
+        </nav>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Rodapé -->
+  <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+      <p>© 2026 Suzano S.A. — Gestão Logística e Expedição FOB</p>
+      <div class="flex items-center space-x-4 text-slate-400">
+        <span>Docas & Armazéns</span>
+        <span>•</span>
+        <span>Triagem Fiscal & Qualidade</span>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    lucide.createIcons();
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
