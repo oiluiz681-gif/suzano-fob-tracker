@@ -107,7 +107,7 @@
         <span>Finalizar FO ({{ contagem_filas['Finalizar FO'] }})</span>
       </a>
 
-      <!-- Filas Especializadas Adicionais -->
+      <!-- Fiscal -->
       <a href="/painel?fila=Fiscal&status={{ filtro_status }}&busca={{ busca }}"
          class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Fiscal' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
         <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
@@ -122,7 +122,7 @@
         
         <div class="relative flex-1">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-          <input type="text" name="busca" value="{{ busca }}" placeholder="Filtrar por NF, Protocolo, Transportadora, Placa ou Cliente..."
+          <input type="text" name="busca" value="{{ busca }}" placeholder="Filtrar por Centro, NF, Protocolo, Transportadora, Placa ou Cliente..."
                  class="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500">
         </div>
 
@@ -164,7 +164,7 @@
           <thead>
             <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase tracking-wider font-semibold">
               <th class="py-3 px-4">Protocolo / Data</th>
-              <th class="py-3 px-4">Nota Fiscal</th>
+              <th class="py-3 px-4">Centro / Nota Fiscal</th>
               <th class="py-3 px-4">Cliente / Transportadora</th>
               <th class="py-3 px-4">Motivo da Divergência</th>
               <th class="py-3 px-4">Fila Atual</th>
@@ -182,10 +182,17 @@
                 <span class="text-[11px] text-slate-400">{{ it.created_at[:16] }}</span>
               </td>
 
-              <!-- NF & Placa -->
+              <!-- Centro & NF & Placa -->
               <td class="py-3 px-4">
-                <span class="font-bold text-emerald-800 block">{{ it.nf_numero }}</span>
-                <span class="text-[11px] text-slate-500 font-mono">{{ it.placa_veiculo }}</span>
+                <div class="flex items-center space-x-1.5">
+                  <span class="font-bold text-emerald-800">{{ it.nf_numero }}</span>
+                  <span class="text-[10px] text-slate-400 font-mono">({{ it.placa_veiculo }})</span>
+                </div>
+                {% if it.centro_origem %}
+                  <span class="text-[10px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded block truncate max-w-[200px] mt-0.5" title="{{ it.centro_origem }}">
+                    📍 {{ it.centro_origem }}
+                  </span>
+                {% endif %}
               </td>
 
               <!-- Cliente & Transportadora -->
