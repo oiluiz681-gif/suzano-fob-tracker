@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Protocolo Gerado com Sucesso | Suzano{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-8">
+
+  <div class="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden text-center">
+    
+    <!-- Topo Verde de Sucesso -->
+    <div class="bg-emerald-600 text-white p-8">
+      <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/30">
+        <i data-lucide="check" class="w-10 h-10 text-white"></i>
+      </div>
+      <h1 class="text-2xl font-bold mb-1">Ocorrência Registrada!</h1>
+      <p class="text-xs text-emerald-100">O protocolo já foi encaminhado para a mesa de operações da Suzano.</p>
+    </div>
+
+    <!-- Conteúdo do Protocolo -->
+    <div class="p-6">
+      
+      <p class="text-xs uppercase tracking-wider text-slate-400 font-bold mb-1">Seu Número de Protocolo</p>
+      <div class="bg-slate-50 border-2 border-dashed border-emerald-500 rounded-xl p-4 mb-6 inline-block w-full">
+        <span class="text-2xl sm:text-3xl font-mono font-extrabold text-slate-800 tracking-wider" id="protocolo-texto">{{ ocorrencia.protocolo }}</span>
+      </div>
+
+      <!-- Detalhes Rápidos -->
+      <div class="bg-slate-50 rounded-xl p-4 text-left text-xs space-y-2 mb-6 border border-slate-100">
+        <div class="flex justify-between py-1 border-b border-slate-200/60">
+          <span class="text-slate-500 font-medium">Nota Fiscal:</span>
+          <span class="font-bold text-slate-800">{{ ocorrencia.nf_numero }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-200/60">
+          <span class="text-slate-500 font-medium">Placa / Transportadora:</span>
+          <span class="font-bold text-slate-800">{{ ocorrencia.placa_veiculo }} - {{ ocorrencia.transportadora }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-200/60">
+          <span class="text-slate-500 font-medium">Tipo da Divergência:</span>
+          <span class="font-bold text-emerald-800">{{ ocorrencia.tipo_divergencia }}</span>
+        </div>
+        <div class="flex justify-between py-1 border-b border-slate-200/60">
+          <span class="text-slate-500 font-medium">Fila Atual:</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800">
+            {{ ocorrencia.fila_atual }}
+          </span>
+        </div>
+        <div class="flex justify-between py-1">
+          <span class="text-slate-500 font-medium">Status:</span>
+          <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-800">
+            {{ ocorrencia.status }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Ações -->
+      <div class="flex flex-col sm:flex-row gap-3 justify-center mb-4">
+        <button onclick="copiarProtocolo()" class="flex-1 px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl border border-slate-300 transition flex items-center justify-center space-x-2">
+          <i data-lucide="copy" class="w-4 h-4"></i>
+          <span id="btn-copiar-texto">Copiar Protocolo</span>
+        </button>
+
+        <a href="/rastreio/{{ ocorrencia.protocolo }}" class="flex-1 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs rounded-xl shadow-sm transition flex items-center justify-center space-x-2">
+          <i data-lucide="eye" class="w-4 h-4"></i>
+          <span>Acompanhar Rastreio</span>
+        </a>
+      </div>
+
+      <a href="/nova-ocorrencia" class="text-xs text-slate-400 hover:text-slate-600 inline-flex items-center space-x-1">
+        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+        <span>Abrir outro protocolo para carga diferente</span>
+      </a>
+
+    </div>
+
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function copiarProtocolo() {
+    const texto = document.getElementById('protocolo-texto').innerText;
+    navigator.clipboard.writeText(texto).then(() => {
+      const btnTexto = document.getElementById('btn-copiar-texto');
+      btnTexto.innerText = 'Copiado!';
+      setTimeout(() => {
+        btnTexto.innerText = 'Copiar Protocolo';
+      }, 2500);
+    });
+  }
+</script>
+{% endblock %}
