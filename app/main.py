@@ -33,6 +33,34 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 # Inicializa banco de dados e dados de exemplo
 init_db()
 
+# Dicionário oficial de centros da Suzano
+CENTROS_SUZANO = {
+    "1081": "CD Campina Grande do Sul",
+    "1102": "Unidade Rio Verde SP",
+    "1110": "Fábrica Mogi das Cruzes",
+    "1111": "CD GUARULHOS",
+    "1112": "CD Suzano UNBC",
+    "1113": "CD Simões Filho UNBC",
+    "1114": "CD Fortaleza UNBC",
+    "1115": "CD Cabo de Sto. Agostinho UNBC",
+    "1116": "CD Cachoeirinha UNBC",
+    "1301": "Unidade Imperatriz MA",
+    "2100": "Unidade Mucuri BA",
+    "2280": "CD Maracanau",
+    "2282": "CD Maracanau - CE",
+    "2283": "Unidade Belem - PA",
+    "3222": "Valencia",
+    "3224": "Honfleur",
+    "3608": "Santos ASIA (FIT)",
+    "3841": "Veracel (FIT)",
+    "5400": "Unidade Limeira SP",
+    "6100": "Unidade Jacareí SP",
+    "6300": "Unidade Aracruz ES",
+    "6599": "VERACEL CELULOSE S.A.",
+    "6800": "Suzano-MS Cel Sul M. Gros Ltda",
+    "8012": "SFBC PARTICIPACOES FACEPA",
+}
+
 def gerar_numero_protocolo():
     conn = get_connection()
     cursor = conn.cursor()
@@ -50,13 +78,16 @@ async def index(request: Request):
 @app.get("/nova-ocorrencia", response_class=HTMLResponse)
 async def nova_ocorrencia_form(request: Request):
     """Formulário mobile-first para o motorista/cliente reportar divergência na doca"""
-    return templates.TemplateResponse(request=request, name="nova_ocorrencia.html")
+    return templates.TemplateResponse(request=request, name="nova_ocorrencia.html", context={
+        "centros": CENTROS_SUZANO
+    })
 
 @app.post("/nova-ocorrencia")
 async def nova_ocorrencia_submit(
     request: Request,
     nf_numero: str = Form(...),
     chave_nfe: Optional[str] = Form(""),
+    centro_origem: str = Form(...),
     transportadora: str = Form(...),
     placa_veiculo: str = Form(...),
     motorista_nome: str = Form(...),
@@ -84,14 +115,14 @@ async def nova_ocorrencia_submit(
     cursor = conn.cursor()
     cursor.execute("""
         INSERT INTO ocorrencias (
-            protocolo, nf_numero, chave_nfe, transportadora, placa_veiculo,
+            protocolo, nf_numero, chave_nfe, centro_origem, transportadora, placa_veiculo,
             motorista_nome, motorista_telefone, cliente_nome, cliente_cnpj,
             tipo_divergencia, descricao, fila_atual, status, prioridade,
             fotos, resolucao_final, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Área de Devolução', 'Novo', 'Normal', ?, NULL, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Área de Devolução', 'Novo', 'Normal', ?, NULL, ?, ?)
     """, (
         protocolo, nf_numero.strip(), chave_nfe.strip() if chave_nfe else "",
-        transportadora.strip(), placa_veiculo.strip().upper(),
+        centro_origem.strip(), transportadora.strip(), placa_veiculo.strip().upper(),
         motorista_nome.strip(), motorista_telefone.strip(),
         cliente_nome.strip(), cliente_cnpj.strip() if cliente_cnpj else "",
         tipo_divergencia, descricao.strip(),
@@ -150,9 +181,9 @@ async def painel(
         params.append(status)
         
     if busca:
-        query += " AND (protocolo LIKE ? OR nf_numero LIKE ? OR transportadora LIKE ? OR placa_veiculo LIKE ? OR cliente_nome LIKE ?)"
+        query += " AND (protocolo LIKE ? OR nf_numero LIKE ? OR transportadora LIKE ? OR placa_veiculo LIKE ? OR cliente_nome LIKE ? OR centro_origem LIKE ?)"
         busca_param = f"%{busca}%"
-        params.extend([busca_param, busca_param, busca_param, busca_param, busca_param])
+        params.extend([busca_param, busca_param, busca_param, busca_param, busca_param, busca_param])
         
     query += " ORDER BY id DESC"
     cursor.execute(query, params)
@@ -175,7 +206,7 @@ async def painel(
     total_concluidos = cursor.fetchone()["total"]
 
     # Contagem pelas filas personalizadas da Suzano
-    filas_nome = ["Área de Devolução", "Análise de Procedência", "Finalizar FO", "Fiscal", "Qualidade"]
+    filas_nome = ["Área de Devolução", "Análise de Procedência", "Finalizar FO", "Fiscal"]
     contagem_filas = {}
     for f in filas_nome:
         cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE fila_atual = ? AND status != 'Concluído'", (f,))
@@ -306,7 +337,7 @@ async def rastreio_protocolo(request: Request, protocolo: str):
 
 @app.get("/exportar-csv")
 async def exportar_csv():
-    """Gera exportação em CSV para relatórios em Excel"""
+    """Gera exportação em CSV para relatórios em Excel com Centro de Origem"""
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM ocorrencias ORDER BY id DESC")
@@ -316,13 +347,13 @@ async def exportar_csv():
     output = io.StringIO()
     writer = csv.writer(output, delimiter=';')
     writer.writerow([
-        "Protocolo", "NF", "Transportadora", "Placa", "Motorista", "Telefone",
+        "Protocolo", "Centro de Origem", "NF", "Transportadora", "Placa", "Motorista", "Telefone",
         "Cliente", "CNPJ", "Tipo Divergência", "Fila Atual", "Status", "Prioridade",
         "Data Abertura", "Última Atualização", "Resolução"
     ])
     for r in rows:
         writer.writerow([
-            r["protocolo"], r["nf_numero"], r["transportadora"], r["placa_veiculo"],
+            r["protocolo"], r["centro_origem"] or "", r["nf_numero"], r["transportadora"], r["placa_veiculo"],
             r["motorista_nome"], r["motorista_telefone"], r["cliente_nome"], r["cliente_cnpj"],
             r["tipo_divergencia"], r["fila_atual"], r["status"], r["prioridade"],
             r["created_at"], r["updated_at"], r["resolucao_final"] or ""
