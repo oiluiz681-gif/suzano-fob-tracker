@@ -88,7 +88,7 @@ async def nova_ocorrencia_submit(
             motorista_nome, motorista_telefone, cliente_nome, cliente_cnpj,
             tipo_divergencia, descricao, fila_atual, status, prioridade,
             fotos, resolucao_final, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Triagem Inicial', 'Novo', 'Normal', ?, NULL, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Área de Devolução', 'Novo', 'Normal', ?, NULL, ?, ?)
     """, (
         protocolo, nf_numero.strip(), chave_nfe.strip() if chave_nfe else "",
         transportadora.strip(), placa_veiculo.strip().upper(),
@@ -103,7 +103,7 @@ async def nova_ocorrencia_submit(
     # Registro de auditoria
     cursor.execute("""
         INSERT INTO historico (ocorrencia_id, autor, acao, observacao, created_at)
-        VALUES (?, 'Motorista / Cliente', 'Abertura de Ocorrência FOB', 'Divergência registrada na doca com fotos e dados da carga.', ?)
+        VALUES (?, 'Motorista / Cliente', 'Abertura de Ocorrência FOB', 'Divergência registrada na doca e direcionada para a Área de Devolução.', ?)
     """, (ocorrencia_id, agora))
     
     conn.commit()
@@ -165,7 +165,7 @@ async def painel(
     cursor.execute("SELECT COUNT(*) as total FROM ocorrencias")
     total_geral = cursor.fetchone()["total"]
 
-    cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE fila_atual = 'Triagem Inicial' AND status = 'Novo'")
+    cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE fila_atual = 'Área de Devolução' AND status = 'Novo'")
     total_novos = cursor.fetchone()["total"]
 
     cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE status = 'Em Análise'")
@@ -174,8 +174,8 @@ async def painel(
     cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE status = 'Concluído'")
     total_concluidos = cursor.fetchone()["total"]
 
-    # Contagem por filas
-    filas_nome = ["Triagem Inicial", "Fiscal", "Armazém / Doca", "Qualidade", "Comercial"]
+    # Contagem pelas filas personalizadas da Suzano
+    filas_nome = ["Área de Devolução", "Análise de Procedência", "Finalizar FO", "Fiscal", "Qualidade"]
     contagem_filas = {}
     for f in filas_nome:
         cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE fila_atual = ? AND status != 'Concluído'", (f,))
@@ -230,7 +230,7 @@ async def tratar_ocorrencia(
     observacao: str = Form(""),
     resolucao: Optional[str] = Form(None)
 ):
-    """Executa a triagem / direcionamento e despacho"""
+    """Executa o direcionamento entre as filas da Suzano"""
     conn = get_connection()
     cursor = conn.cursor()
     agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
