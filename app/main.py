@@ -100,13 +100,16 @@ def gerar_numero_protocolo():
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     """
-    Bloqueio corporativo estrito: se não estiver logado, redireciona para o Login.
-    Se já estiver logado, entra direto no Painel Operacional.
+    Página Inicial Corporativa:
+    - Se NÃO estiver logado: redireciona compulsoriamente para /login.
+    - Se ESTIVER logado: exibe a página inicial do sistema (index.html).
     """
     usuario = get_current_user(request)
     if not usuario:
         return RedirectResponse(url="/login", status_code=303)
-    return RedirectResponse(url="/painel", status_code=303)
+    return templates.TemplateResponse(request=request, name="index.html", context={
+        "usuario_logado": usuario
+    })
 
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
@@ -114,9 +117,9 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
         usuario = get_current_user(request)
         if not usuario:
             return RedirectResponse(url="/login", status_code=303)
-        return RedirectResponse(url="/painel", status_code=303)
+        return RedirectResponse(url="/", status_code=303)
     if exc.status_code == 403:
-        return RedirectResponse(url="/painel", status_code=303)
+        return RedirectResponse(url="/", status_code=303)
     return HTMLResponse(content=f"Erro corporativo {exc.status_code}: {exc.detail}", status_code=exc.status_code)
 
 # ==========================================
@@ -124,14 +127,14 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 # ==========================================
 
 @app.get("/login", response_class=HTMLResponse)
-async def login_form(request: Request, next: Optional[str] = "/painel"):
+async def login_form(request: Request, next: Optional[str] = "/"):
     usuario = get_current_user(request)
     if usuario:
-        return RedirectResponse(url=next or "/painel", status_code=303)
+        return RedirectResponse(url=next or "/", status_code=303)
         
     return templates.TemplateResponse(request=request, name="login.html", context={
         "usuario_logado": None,
-        "next": next or "/painel",
+        "next": next or "/",
         "erro": None
     })
 
@@ -140,7 +143,7 @@ async def login_submit(
     request: Request,
     username: str = Form(...),
     senha: str = Form(...),
-    next: Optional[str] = Form("/painel")
+    next: Optional[str] = Form("/")
 ):
     conn = get_connection()
     cursor = conn.cursor()
@@ -158,13 +161,13 @@ async def login_submit(
     if not user_row or not verificar_senha(senha, user_row["senha_hash"]):
         return templates.TemplateResponse(request=request, name="login.html", context={
             "usuario_logado": None,
-            "next": next or "/painel",
+            "next": next or "/",
             "erro": "Usuário ou senha incorretos. Verifique suas credenciais."
         }, status_code=400)
 
     # Cria sessão segura
     token = criar_sessao(user_row["id"])
-    dest_url = next if (next and next.startswith("/") and not next.startswith("/login")) else "/painel"
+    dest_url = next if (next and next.startswith("/") and not next.startswith("/login")) else "/"
     response = RedirectResponse(url=dest_url, status_code=303)
     response.set_cookie(
         key="session_token",
