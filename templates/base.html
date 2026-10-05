@@ -57,8 +57,8 @@
 
         <!-- Navegação Desktop & Mobile -->
         <nav class="flex items-center space-x-1.5 sm:space-x-3">
-          
-          <!-- Botão Público do Motorista -->
+          {% if usuario_logado %}
+          <!-- Botão Nova Ocorrência -->
           <a href="/nova-ocorrencia" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span class="hidden sm:inline">Nova Ocorrência</span>
@@ -79,7 +79,7 @@
           </a>
 
           <!-- ABA EXCLUSIVA DO ADMINISTRADOR -->
-          {% if usuario_logado and usuario_logado.perfil == 'admin' %}
+          {% if usuario_logado.perfil == 'admin' %}
           <a href="/admin/usuarios" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-700/80 hover:bg-purple-600 text-white transition shadow-sm border border-purple-400/40">
             <i data-lucide="shield" class="w-3.5 h-3.5 text-purple-200"></i>
             <span class="hidden md:inline">Gestão Usuários</span>
@@ -89,26 +89,30 @@
 
           <div class="h-6 w-px bg-white/20 mx-1 hidden sm:block"></div>
 
-          <!-- ÁREA DO USUÁRIO LOGADO / LOGIN -->
-          {% if usuario_logado %}
-            <div class="flex items-center space-x-2">
-              <div class="hidden lg:flex flex-col text-right">
-                <span class="text-xs font-bold text-white truncate max-w-[120px]">{{ usuario_logado.nome }}</span>
-                <span class="text-[10px] text-emerald-200 uppercase font-semibold">
-                  {% if usuario_logado.perfil == 'admin' %}👑 Admin{% else %}🟢 Operador{% endif %}
-                </span>
-              </div>
-              <a href="/logout" title="Sair do Sistema" class="p-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-rose-600/80 text-white transition">
-                <i data-lucide="log-out" class="w-4 h-4"></i>
-              </a>
+          <!-- ÁREA DO USUÁRIO LOGADO -->
+          <div class="flex items-center space-x-2">
+            <div class="hidden lg:flex flex-col text-right">
+              <span class="text-xs font-bold text-white truncate max-w-[120px]">{{ usuario_logado.nome }}</span>
+              <span class="text-[10px] text-emerald-200 uppercase font-semibold">
+                {% if usuario_logado.perfil == 'admin' %}👑 Admin{% else %}🟢 Operador{% endif %}
+              </span>
             </div>
+            <a href="/logout" title="Sair do Sistema" class="p-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-rose-600/80 text-white transition">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </a>
+          </div>
           {% else %}
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-medium text-emerald-200/90 flex items-center space-x-1.5 bg-emerald-950/40 px-3 py-1.5 rounded-xl border border-emerald-500/20">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+              <span class="hidden sm:inline">Portal Corporativo Seguro</span>
+            </span>
             <a href="/login" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 text-white transition border border-white/20">
               <i data-lucide="lock" class="w-3.5 h-3.5"></i>
               <span>Entrar</span>
             </a>
+          </div>
           {% endif %}
-
         </nav>
 
       </div>
