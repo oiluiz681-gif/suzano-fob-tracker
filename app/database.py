@@ -22,6 +22,7 @@ def _gerar_hash_inicial(senha: str) -> str:
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
     # Tabela principal de ocorrências
     cursor.execute("""
@@ -68,7 +69,7 @@ def init_db():
     );
     """)
     
-    # Tabela de Usuários (Controle de Acesso / Perfis Admin e Comum)
+    # Tabela de Usuários (Perfis: admin ou comum)
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS usuarios (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,25 +94,61 @@ def init_db():
     );
     """)
 
+    # Tabela Dinâmica de Filas de Destino (Gerenciada pelo Admin)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS filas (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT UNIQUE NOT NULL,
+        descricao TEXT,
+        ordem INTEGER DEFAULT 0,
+        ativa INTEGER DEFAULT 1,
+        created_at TEXT NOT NULL
+    );
+    """)
+
     conn.commit()
 
-    # Criação do usuário Administrador inicial se não houver usuários cadastrados
-    cursor.execute("SELECT COUNT(*) as total FROM usuarios")
-    if cursor.fetchone()["total"] == 0:
-        agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    # Atualiza ou cria o Administrador mestre: "Luiz Fernando Ferreira"
+    cursor.execute("SELECT id, username FROM usuarios WHERE id = 1 OR username = 'admin' OR username = 'luiz.ferreira'")
+    admin_row = cursor.fetchone()
+    
+    if admin_row:
+        # Atualiza o nome para o solicitado
+        cursor.execute("""
+            UPDATE usuarios 
+            SET nome = 'Luiz Fernando Ferreira', perfil = 'admin' 
+            WHERE id = ?
+        """, (admin_row["id"],))
+    else:
+        # Cria o usuário inicial caso a base seja nova
         senha_admin = _gerar_hash_inicial("Suzano@2026")
         cursor.execute("""
             INSERT INTO usuarios (nome, username, senha_hash, perfil, ativo, created_at)
             VALUES (?, ?, ?, 'admin', 1, ?)
-        """, ("Administrador Suzano", "admin", senha_admin, agora))
-        conn.commit()
-    
-    # Seed de dados de ocorrências se a tabela estiver vazia
+        """, ("Luiz Fernando Ferreira", "admin", senha_admin, agora))
+
+    # Seed inicial das Filas de Destino se a tabela estiver vazia
+    cursor.execute("SELECT COUNT(*) as total FROM filas")
+    if cursor.fetchone()["total"] == 0:
+        filas_iniciais = [
+            ("Área de Devolução", "Fila inicial onde todos os novos protocolos de clientes são recepcionados", 1),
+            ("Análise de Procedência", "Fila da operação que investiga a procedência da falta física", 2),
+            ("Finalizar FO", "Fila que finaliza a FO para o cliente ser formalmente ressarcido", 3),
+            ("Fiscal", "Tratativa tributária, notas de devolução e cancelamento de canhoto", 4),
+        ]
+        for f in filas_iniciais:
+            cursor.execute("""
+                INSERT OR IGNORE INTO filas (nome, descricao, ordem, ativa, created_at)
+                VALUES (?, ?, ?, 1, ?)
+            """, (f[0], f[1], f[2], agora))
+
+    # Seed de ocorrências de exemplo se a tabela estiver vazia
     cursor.execute("SELECT COUNT(*) as total FROM ocorrencias")
     row = cursor.fetchone()
     if row["total"] == 0:
         seed_dados(conn)
         
+    conn.commit()
     conn.close()
 
 def seed_dados(conn):
@@ -161,7 +198,7 @@ def seed_dados(conn):
         ocorrencia_id = cursor.lastrowid
         cursor.execute("""
         INSERT INTO historico (ocorrencia_id, autor, acao, observacao, created_at)
-        VALUES (?, 'Sistema', 'Abertura do Protocolo', 'Protocolo registrado no armazém e encaminhado para a Área de Devolução.', ?)
+        VALUES (?, 'Luiz Fernando Ferreira', 'Abertura do Protocolo', 'Protocolo registrado no armazém e encaminhado para a Área de Devolução.', ?)
         """, (ocorrencia_id, agora))
         
     conn.commit()
