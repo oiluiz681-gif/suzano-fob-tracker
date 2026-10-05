@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Suzano | Gestão de Coletas FOB{% endblock %}</title>
+  <title>{% block title %}Suzano | Gestão de Coletas FOB{% endblock %} - Suzano S.A.</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -28,7 +28,7 @@
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
     body {
       font-family: 'Inter', sans-serif;
     }
@@ -36,43 +36,79 @@
 </head>
 <body class="bg-slate-50 text-slate-800 flex flex-col min-h-screen">
 
-  <!-- Header / Barra Superior -->
-  <header class="bg-suzano text-white shadow-md sticky top-0 z-50">
+  <!-- Header / Barra Superior Corporativa -->
+  <header class="bg-gradient-to-r from-suzano-dark via-suzano to-emerald-900 text-white shadow-md sticky top-0 z-50 border-b border-emerald-700/40">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         
         <!-- Logo e Título -->
         <a href="/" class="flex items-center space-x-3 group">
-          <div class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition">
+          <div class="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/20 group-hover:bg-white/20 transition shadow-inner">
             <i data-lucide="package-x" class="w-6 h-6 text-white"></i>
           </div>
           <div>
             <div class="flex items-center space-x-2">
-              <span class="font-bold text-lg tracking-wide">SUZANO</span>
-              <span class="text-xs bg-emerald-700/80 px-2 py-0.5 rounded-full font-medium text-emerald-100 border border-emerald-500/30">FOB Tracker</span>
+              <span class="font-extrabold text-lg tracking-wide">SUZANO</span>
+              <span class="text-[10px] bg-emerald-700/90 px-2 py-0.5 rounded-full font-bold text-emerald-100 border border-emerald-500/30 uppercase tracking-wider">FOB Tracker</span>
             </div>
-            <p class="text-xs text-emerald-200/80">Tratativa de Divergências & Devoluções</p>
+            <p class="text-[11px] text-emerald-200/80">Gestão de Coletas & Devoluções</p>
           </div>
         </a>
 
         <!-- Navegação Desktop & Mobile -->
-        <nav class="flex items-center space-x-2 sm:space-x-4">
-          <a href="/nova-ocorrencia" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm">
+        <nav class="flex items-center space-x-1.5 sm:space-x-3">
+          
+          <!-- Botão Público do Motorista -->
+          <a href="/nova-ocorrencia" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white transition shadow-sm">
             <i data-lucide="plus-circle" class="w-4 h-4"></i>
             <span class="hidden sm:inline">Nova Ocorrência</span>
             <span class="sm:hidden">Nova</span>
           </a>
 
-          <a href="/painel" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 text-white transition">
+          <!-- Mesa Suzano -->
+          <a href="/painel" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/10 text-white transition">
             <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
             <span class="hidden sm:inline">Mesa Suzano</span>
             <span class="sm:hidden">Mesa</span>
           </a>
 
-          <a href="/rastreio" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium hover:bg-white/10 text-emerald-100 transition">
+          <!-- Rastrear -->
+          <a href="/rastreio" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/10 text-emerald-100 transition">
             <i data-lucide="search" class="w-4 h-4"></i>
             <span class="hidden sm:inline">Consultar</span>
           </a>
+
+          <!-- ABA EXCLUSIVA DO ADMINISTRADOR -->
+          {% if usuario_logado and usuario_logado.perfil == 'admin' %}
+          <a href="/admin/usuarios" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-purple-700/80 hover:bg-purple-600 text-white transition shadow-sm border border-purple-400/40">
+            <i data-lucide="shield" class="w-3.5 h-3.5 text-purple-200"></i>
+            <span class="hidden md:inline">Gestão Usuários</span>
+            <span class="md:hidden">Admin</span>
+          </a>
+          {% endif %}
+
+          <div class="h-6 w-px bg-white/20 mx-1 hidden sm:block"></div>
+
+          <!-- ÁREA DO USUÁRIO LOGADO / LOGIN -->
+          {% if usuario_logado %}
+            <div class="flex items-center space-x-2">
+              <div class="hidden lg:flex flex-col text-right">
+                <span class="text-xs font-bold text-white truncate max-w-[120px]">{{ usuario_logado.nome }}</span>
+                <span class="text-[10px] text-emerald-200 uppercase font-semibold">
+                  {% if usuario_logado.perfil == 'admin' %}👑 Admin{% else %}🟢 Operador{% endif %}
+                </span>
+              </div>
+              <a href="/logout" title="Sair do Sistema" class="p-2 rounded-xl text-xs font-semibold bg-white/10 hover:bg-rose-600/80 text-white transition">
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+              </a>
+            </div>
+          {% else %}
+            <a href="/login" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-white/15 hover:bg-white/25 text-white transition border border-white/20">
+              <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+              <span>Entrar</span>
+            </a>
+          {% endif %}
+
         </nav>
 
       </div>
@@ -84,14 +120,16 @@
     {% block content %}{% endblock %}
   </main>
 
-  <!-- Rodapé -->
+  <!-- Rodapé Corporativo -->
   <footer class="bg-white border-t border-slate-200 mt-12 py-6 text-center text-xs text-slate-500">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
       <p>© 2026 Suzano S.A. — Gestão Logística e Expedição FOB</p>
       <div class="flex items-center space-x-4 text-slate-400">
-        <span>Docas & Armazéns</span>
+        <span>Área Devolução</span>
         <span>•</span>
-        <span>Triagem Fiscal & Qualidade</span>
+        <span>Análise de Procedência</span>
+        <span>•</span>
+        <span>Finalizar FO</span>
       </div>
     </div>
   </footer>
