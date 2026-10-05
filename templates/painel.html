@@ -13,7 +13,7 @@
         <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">Tempo Real</span>
       </h1>
       <p class="text-xs text-slate-500">
-        Gestão integrada dos fluxos de Área Devolução, Análise de Procedência e Finalização de FO.
+        Gestão integrada das filas operacionais e tratativas de coletas FOB.
       </p>
     </div>
 
@@ -75,10 +75,10 @@
 
   </div>
 
-  <!-- Barra de Filtros & Abas das Filas Oficiais Suzano -->
+  <!-- Barra de Filtros & Abas das Filas Dinâmicas Cadastradas -->
   <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-6 overflow-hidden">
     
-    <!-- Abas de Filas -->
+    <!-- Abas de Filas Dinâmicas -->
     <div class="flex overflow-x-auto border-b border-slate-200 p-2 gap-1 bg-slate-50/70">
       <a href="/painel?fila=Todas&status={{ filtro_status }}&busca={{ busca }}"
          class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Todas' %}bg-white text-emerald-800 shadow-sm border border-slate-200{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
@@ -86,33 +86,16 @@
         <span>Todas as Filas</span>
       </a>
 
-      <!-- 1. Fila Área Devolução -->
-      <a href="/painel?fila=Área de Devolução&status={{ filtro_status }}&busca={{ busca }}"
-         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Área de Devolução' %}bg-amber-500 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="log-in" class="w-3.5 h-3.5"></i>
-        <span>Área Devolução ({{ contagem_filas['Área de Devolução'] }})</span>
+      {% for f in filas_ativas %}
+      <a href="/painel?fila={{ f.nome }}&status={{ filtro_status }}&busca={{ busca }}"
+         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == f.nome %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-200/50{% endif %}">
+        {% if f.nome == 'Área de Devolução' %}<i data-lucide="log-in" class="w-3.5 h-3.5"></i>
+        {% elif f.nome == 'Análise de Procedência' %}<i data-lucide="search-check" class="w-3.5 h-3.5"></i>
+        {% elif f.nome == 'Finalizar FO' %}<i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5"></i>
+        {% else %}<i data-lucide="git-branch" class="w-3.5 h-3.5"></i>{% endif %}
+        <span>{{ f.nome }} ({{ contagem_filas[f.nome] or 0 }})</span>
       </a>
-
-      <!-- 2. Fila Análise de Procedência -->
-      <a href="/painel?fila=Análise de Procedência&status={{ filtro_status }}&busca={{ busca }}"
-         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Análise de Procedência' %}bg-blue-600 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="search-check" class="w-3.5 h-3.5"></i>
-        <span>Análise de Procedência ({{ contagem_filas['Análise de Procedência'] }})</span>
-      </a>
-
-      <!-- 3. Fila Finalizar FO -->
-      <a href="/painel?fila=Finalizar FO&status={{ filtro_status }}&busca={{ busca }}"
-         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Finalizar FO' %}bg-purple-600 text-white shadow-sm{% else %}text-slate-700 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="badge-dollar-sign" class="w-3.5 h-3.5"></i>
-        <span>Finalizar FO ({{ contagem_filas['Finalizar FO'] }})</span>
-      </a>
-
-      <!-- Fiscal -->
-      <a href="/painel?fila=Fiscal&status={{ filtro_status }}&busca={{ busca }}"
-         class="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition flex items-center space-x-1.5 {% if filtro_fila == 'Fiscal' %}bg-emerald-700 text-white shadow-sm{% else %}text-slate-600 hover:bg-slate-200/50{% endif %}">
-        <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
-        <span>Fiscal ({{ contagem_filas['Fiscal'] }})</span>
-      </a>
+      {% endfor %}
     </div>
 
     <!-- Barra de Busca e Filtro de Status -->
@@ -218,7 +201,7 @@
                 </div>
               </td>
 
-              <!-- Fila Atual -->
+              <!-- Fila Atual Dinâmica -->
               <td class="py-3 px-4">
                 {% if it.fila_atual == 'Área de Devolução' or it.fila_atual == 'Área Devolução' %}
                   <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
@@ -235,12 +218,8 @@
                     <i data-lucide="check" class="w-3 h-3 mr-1 text-purple-600"></i>
                     Finalizar FO
                   </span>
-                {% elif it.fila_atual == 'Fiscal' %}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                    Fiscal
-                  </span>
                 {% else %}
-                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-300">
                     {{ it.fila_atual }}
                   </span>
                 {% endif %}
