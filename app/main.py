@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException, Dep
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.database import get_connection, init_db
 from app.auth import hash_senha, verificar_senha, criar_sessao, obter_usuario_da_sessao, encerrar_sessao
@@ -23,7 +24,12 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 os.makedirs(TEMPLATES_DIR, exist_ok=True)
 
-app = FastAPI(title="Suzano - Gestão de Coletas FOB e Divergências")
+app = FastAPI(
+    title="Suzano - Gestão de Coletas FOB e Divergências",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None
+)
 
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 if os.path.exists(STATIC_DIR):
@@ -87,53 +93,31 @@ def gerar_numero_protocolo():
     ano = datetime.now().year
     return f"FOB-{ano}-{total:05d}"
 
-# ==========================================
-# ROTAS PÚBLICAS (Home e Rastreio)
-# ==========================================
+# =========================================================================
+# PÁGINA INICIAL RAIZ (PORTAL PRIVADO: REDIRECIONA QUEM NÃO ESTIVER LOGADO)
+# =========================================================================
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
+    """
+    Bloqueio corporativo estrito: se não estiver logado, redireciona para o Login.
+    Se já estiver logado, entra direto no Painel Operacional.
+    """
     usuario = get_current_user(request)
-    return templates.TemplateResponse(request=request, name="index.html", context={
-        "usuario_logado": usuario
-    })
+    if not usuario:
+        return RedirectResponse(url="/login", status_code=303)
+    return RedirectResponse(url="/painel", status_code=303)
 
-@app.get("/rastreio", response_class=HTMLResponse)
-async def rastreio_busca(request: Request):
-    usuario = get_current_user(request)
-    return templates.TemplateResponse(request=request, name="rastreio.html", context={
-        "ocorrencia": None,
-        "usuario_logado": usuario
-    })
-
-@app.get("/rastreio/{protocolo}", response_class=HTMLResponse)
-async def rastreio_protocolo(request: Request, protocolo: str):
-    usuario = get_current_user(request)
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM ocorrencias WHERE protocolo = ?", (protocolo,))
-    row = cursor.fetchone()
-    
-    if not row:
-        conn.close()
-        return templates.TemplateResponse(request=request, name="rastreio.html", context={
-            "ocorrencia": None,
-            "erro": f"Protocolo '{protocolo}' não localizado. Verifique a digitação.",
-            "usuario_logado": usuario
-        })
-        
-    ocorrencia = dict(row)
-    ocorrencia["fotos_list"] = json.loads(ocorrencia["fotos"]) if ocorrencia["fotos"] else []
-
-    cursor.execute("SELECT * FROM historico WHERE ocorrencia_id = ? ORDER BY id ASC", (ocorrencia["id"],))
-    historico = [dict(h) for h in cursor.fetchall()]
-    conn.close()
-
-    return templates.TemplateResponse(request=request, name="rastreio.html", context={
-        "ocorrencia": ocorrencia,
-        "historico": historico,
-        "usuario_logado": usuario
-    })
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    if exc.status_code == 404:
+        usuario = get_current_user(request)
+        if not usuario:
+            return RedirectResponse(url="/login", status_code=303)
+        return RedirectResponse(url="/painel", status_code=303)
+    if exc.status_code == 403:
+        return RedirectResponse(url="/painel", status_code=303)
+    return HTMLResponse(content=f"Erro corporativo {exc.status_code}: {exc.detail}", status_code=exc.status_code)
 
 # ==========================================
 # ROTAS DE AUTENTICAÇÃO (Login e Logout)
@@ -147,6 +131,7 @@ async def login_form(request: Request, next: Optional[str] = "/painel"):
         
     return templates.TemplateResponse(request=request, name="login.html", context={
         "usuario_logado": None,
+        "next": next or "/painel",
         "erro": None
     })
 
@@ -173,12 +158,13 @@ async def login_submit(
     if not user_row or not verificar_senha(senha, user_row["senha_hash"]):
         return templates.TemplateResponse(request=request, name="login.html", context={
             "usuario_logado": None,
+            "next": next or "/painel",
             "erro": "Usuário ou senha incorretos. Verifique suas credenciais."
         }, status_code=400)
 
     # Cria sessão segura
     token = criar_sessao(user_row["id"])
-    dest_url = next if (next and next.startswith("/")) else "/painel"
+    dest_url = next if (next and next.startswith("/") and not next.startswith("/login")) else "/painel"
     response = RedirectResponse(url=dest_url, status_code=303)
     response.set_cookie(
         key="session_token",
@@ -204,7 +190,6 @@ async def logout(request: Request):
 
 @app.get("/nova-ocorrencia", response_class=HTMLResponse)
 async def nova_ocorrencia_form(request: Request):
-    # LOGIN OBRIGATÓRIO PARA ABRIR PROTOCOLO
     usuario = get_current_user(request)
     if not usuario:
         return RedirectResponse(url="/login?next=/nova-ocorrencia", status_code=303)
@@ -230,7 +215,6 @@ async def nova_ocorrencia_submit(
     descricao: str = Form(...),
     fotos: List[UploadFile] = File([])
 ):
-    # LOGIN OBRIGATÓRIO
     usuario = get_current_user(request)
     if not usuario:
         return RedirectResponse(url="/login?next=/nova-ocorrencia", status_code=303)
@@ -299,6 +283,50 @@ async def sucesso(request: Request, protocolo: str):
         "usuario_logado": usuario
     })
 
+# RASTREAMENTO PROTEGIDO (EXIGE LOGIN)
+@app.get("/rastreio", response_class=HTMLResponse)
+async def rastreio_busca(request: Request):
+    usuario = get_current_user(request)
+    if not usuario:
+        return RedirectResponse(url="/login?next=/rastreio", status_code=303)
+
+    return templates.TemplateResponse(request=request, name="rastreio.html", context={
+        "ocorrencia": None,
+        "usuario_logado": usuario
+    })
+
+@app.get("/rastreio/{protocolo}", response_class=HTMLResponse)
+async def rastreio_protocolo(request: Request, protocolo: str):
+    usuario = get_current_user(request)
+    if not usuario:
+        return RedirectResponse(url=f"/login?next=/rastreio/{protocolo}", status_code=303)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM ocorrencias WHERE protocolo = ?", (protocolo,))
+    row = cursor.fetchone()
+    
+    if not row:
+        conn.close()
+        return templates.TemplateResponse(request=request, name="rastreio.html", context={
+            "ocorrencia": None,
+            "erro": f"Protocolo '{protocolo}' não localizado. Verifique a digitação.",
+            "usuario_logado": usuario
+        })
+        
+    ocorrencia = dict(row)
+    ocorrencia["fotos_list"] = json.loads(ocorrencia["fotos"]) if ocorrencia["fotos"] else []
+
+    cursor.execute("SELECT * FROM historico WHERE ocorrencia_id = ? ORDER BY id ASC", (ocorrencia["id"],))
+    historico = [dict(h) for h in cursor.fetchall()]
+    conn.close()
+
+    return templates.TemplateResponse(request=request, name="rastreio.html", context={
+        "ocorrencia": ocorrencia,
+        "historico": historico,
+        "usuario_logado": usuario
+    })
+
 # ==========================================
 # ROTAS DA MESA OPERACIONAL SUZANO
 # ==========================================
@@ -354,7 +382,6 @@ async def painel(
     cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE status = 'Concluído'")
     total_concluidos = cursor.fetchone()["total"]
 
-    # Contagem dinâmica baseada nas filas ativas cadastradas pelo admin
     contagem_filas = {}
     for f in filas_ativas:
         cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE fila_atual = ? AND status != 'Concluído'", (f["nome"],))
@@ -625,7 +652,6 @@ async def admin_excluir_fila(request: Request, fila_id: int):
         conn.close()
         return RedirectResponse(url="/admin/usuarios?erro=Fila+nao+encontrada.", status_code=303)
 
-    # Não permite excluir a Área de Devolução (pois é a fila inicial do sistema)
     if fila["nome"] == "Área de Devolução":
         conn.close()
         return RedirectResponse(url="/admin/usuarios?erro=A+fila+Area+de+Devolucao+e+obrigatoria+e+nao+pode+ser+removida.", status_code=303)
