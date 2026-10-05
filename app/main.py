@@ -31,7 +31,7 @@ if os.path.exists(STATIC_DIR):
 
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
-# Inicializa banco de dados, tabelas de autenticação e dados de exemplo
+# Inicializa banco de dados, tabelas de autenticação e filas dinâmicas
 init_db()
 
 # Dicionário oficial de centros da Suzano
@@ -68,6 +68,16 @@ def get_current_user(request: Request) -> Optional[dict]:
         return None
     return obter_usuario_da_sessao(token)
 
+def obter_filas_ativas() -> List[dict]:
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, nome, descricao FROM filas WHERE ativa = 1 ORDER BY ordem ASC, id ASC")
+    filas = [dict(f) for f in cursor.fetchall()]
+    conn.close()
+    if not filas:
+        return [{"id": 1, "nome": "Área de Devolução", "descricao": "Fila Inicial"}]
+    return filas
+
 def gerar_numero_protocolo():
     conn = get_connection()
     cursor = conn.cursor()
@@ -78,97 +88,13 @@ def gerar_numero_protocolo():
     return f"FOB-{ano}-{total:05d}"
 
 # ==========================================
-# ROTAS PÚBLICAS (Página Inicial e Motorista)
+# ROTAS PÚBLICAS (Home e Rastreio)
 # ==========================================
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     usuario = get_current_user(request)
     return templates.TemplateResponse(request=request, name="index.html", context={
-        "usuario_logado": usuario
-    })
-
-@app.get("/nova-ocorrencia", response_class=HTMLResponse)
-async def nova_ocorrencia_form(request: Request):
-    usuario = get_current_user(request)
-    return templates.TemplateResponse(request=request, name="nova_ocorrencia.html", context={
-        "centros": CENTROS_SUZANO,
-        "usuario_logado": usuario
-    })
-
-@app.post("/nova-ocorrencia")
-async def nova_ocorrencia_submit(
-    request: Request,
-    nf_numero: str = Form(...),
-    chave_nfe: Optional[str] = Form(""),
-    centro_origem: str = Form(...),
-    transportadora: str = Form(...),
-    placa_veiculo: str = Form(...),
-    motorista_nome: str = Form(...),
-    motorista_telefone: str = Form(...),
-    cliente_nome: str = Form(...),
-    cliente_cnpj: Optional[str] = Form(""),
-    tipo_divergencia: str = Form(...),
-    descricao: str = Form(...),
-    fotos: List[UploadFile] = File([])
-):
-    protocolo = gerar_numero_protocolo()
-    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    salvas = []
-    for foto in fotos:
-        if foto.filename and foto.filename.strip():
-            ext = os.path.splitext(foto.filename)[1].lower()
-            nome_arquivo = f"{protocolo}_{int(datetime.now().timestamp()*1000)}{ext}"
-            caminho_arquivo = os.path.join(UPLOAD_DIR, nome_arquivo)
-            with open(caminho_arquivo, "wb") as buffer:
-                shutil.copyfileobj(foto.file, buffer)
-            salvas.append(nome_arquivo)
-
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO ocorrencias (
-            protocolo, nf_numero, chave_nfe, centro_origem, transportadora, placa_veiculo,
-            motorista_nome, motorista_telefone, cliente_nome, cliente_cnpj,
-            tipo_divergencia, descricao, fila_atual, status, prioridade,
-            fotos, resolucao_final, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Área de Devolução', 'Novo', 'Normal', ?, NULL, ?, ?)
-    """, (
-        protocolo, nf_numero.strip(), chave_nfe.strip() if chave_nfe else "",
-        centro_origem.strip(), transportadora.strip(), placa_veiculo.strip().upper(),
-        motorista_nome.strip(), motorista_telefone.strip(),
-        cliente_nome.strip(), cliente_cnpj.strip() if cliente_cnpj else "",
-        tipo_divergencia, descricao.strip(),
-        json.dumps(salvas), agora, agora
-    ))
-    
-    ocorrencia_id = cursor.lastrowid
-    
-    cursor.execute("""
-        INSERT INTO historico (ocorrencia_id, autor, acao, observacao, created_at)
-        VALUES (?, 'Motorista / Cliente', 'Abertura de Ocorrência FOB', 'Divergência registrada na doca e direcionada para a Área de Devolução.', ?)
-    """, (ocorrencia_id, agora))
-    
-    conn.commit()
-    conn.close()
-
-    return RedirectResponse(url=f"/sucesso/{protocolo}", status_code=303)
-
-@app.get("/sucesso/{protocolo}", response_class=HTMLResponse)
-async def sucesso(request: Request, protocolo: str):
-    usuario = get_current_user(request)
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM ocorrencias WHERE protocolo = ?", (protocolo,))
-    ocorrencia = cursor.fetchone()
-    conn.close()
-    
-    if not ocorrencia:
-        raise HTTPException(status_code=404, detail="Protocolo não localizado")
-
-    return templates.TemplateResponse(request=request, name="sucesso.html", context={
-        "ocorrencia": dict(ocorrencia),
         "usuario_logado": usuario
     })
 
@@ -228,11 +154,19 @@ async def login_form(request: Request, next: Optional[str] = "/painel"):
 async def login_submit(
     request: Request,
     username: str = Form(...),
-    senha: str = Form(...)
+    senha: str = Form(...),
+    next: Optional[str] = Form("/painel")
 ):
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT * FROM usuarios WHERE username = ? AND ativo = 1", (username.strip(),))
+    username_clean = username.strip().lower()
+    
+    # Permite login por username cadastrado ou pelo apelido luiz.ferreira / admin
+    cursor.execute("""
+        SELECT * FROM usuarios 
+        WHERE (LOWER(username) = ? OR (id = 1 AND ? IN ('admin', 'luiz.ferreira', 'luiz')))
+        AND ativo = 1
+    """, (username_clean, username_clean))
     user_row = cursor.fetchone()
     conn.close()
 
@@ -244,7 +178,8 @@ async def login_submit(
 
     # Cria sessão segura
     token = criar_sessao(user_row["id"])
-    response = RedirectResponse(url="/painel", status_code=303)
+    dest_url = next if (next and next.startswith("/")) else "/painel"
+    response = RedirectResponse(url=dest_url, status_code=303)
     response.set_cookie(
         key="session_token",
         value=token,
@@ -263,8 +198,109 @@ async def logout(request: Request):
     response.delete_cookie("session_token")
     return response
 
+# ========================================================
+# ROTAS PROTEGIDAS DE PROTOCOLO (EXIGE LOGIN OBRIGATÓRIO)
+# ========================================================
+
+@app.get("/nova-ocorrencia", response_class=HTMLResponse)
+async def nova_ocorrencia_form(request: Request):
+    # LOGIN OBRIGATÓRIO PARA ABRIR PROTOCOLO
+    usuario = get_current_user(request)
+    if not usuario:
+        return RedirectResponse(url="/login?next=/nova-ocorrencia", status_code=303)
+
+    return templates.TemplateResponse(request=request, name="nova_ocorrencia.html", context={
+        "centros": CENTROS_SUZANO,
+        "usuario_logado": usuario
+    })
+
+@app.post("/nova-ocorrencia")
+async def nova_ocorrencia_submit(
+    request: Request,
+    nf_numero: str = Form(...),
+    chave_nfe: Optional[str] = Form(""),
+    centro_origem: str = Form(...),
+    transportadora: str = Form(...),
+    placa_veiculo: str = Form(...),
+    motorista_nome: str = Form(...),
+    motorista_telefone: str = Form(...),
+    cliente_nome: str = Form(...),
+    cliente_cnpj: Optional[str] = Form(""),
+    tipo_divergencia: str = Form(...),
+    descricao: str = Form(...),
+    fotos: List[UploadFile] = File([])
+):
+    # LOGIN OBRIGATÓRIO
+    usuario = get_current_user(request)
+    if not usuario:
+        return RedirectResponse(url="/login?next=/nova-ocorrencia", status_code=303)
+
+    protocolo = gerar_numero_protocolo()
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    salvas = []
+    for foto in fotos:
+        if foto.filename and foto.filename.strip():
+            ext = os.path.splitext(foto.filename)[1].lower()
+            nome_arquivo = f"{protocolo}_{int(datetime.now().timestamp()*1000)}{ext}"
+            caminho_arquivo = os.path.join(UPLOAD_DIR, nome_arquivo)
+            with open(caminho_arquivo, "wb") as buffer:
+                shutil.copyfileobj(foto.file, buffer)
+            salvas.append(nome_arquivo)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO ocorrencias (
+            protocolo, nf_numero, chave_nfe, centro_origem, transportadora, placa_veiculo,
+            motorista_nome, motorista_telefone, cliente_nome, cliente_cnpj,
+            tipo_divergencia, descricao, fila_atual, status, prioridade,
+            fotos, resolucao_final, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Área de Devolução', 'Novo', 'Normal', ?, NULL, ?, ?)
+    """, (
+        protocolo, nf_numero.strip(), chave_nfe.strip() if chave_nfe else "",
+        centro_origem.strip(), transportadora.strip(), placa_veiculo.strip().upper(),
+        motorista_nome.strip(), motorista_telefone.strip(),
+        cliente_nome.strip(), cliente_cnpj.strip() if cliente_cnpj else "",
+        tipo_divergencia, descricao.strip(),
+        json.dumps(salvas), agora, agora
+    ))
+    
+    ocorrencia_id = cursor.lastrowid
+    nome_abridor = f"{usuario['nome']} ({'Admin' if usuario['perfil'] == 'admin' else 'Operador'})"
+    
+    cursor.execute("""
+        INSERT INTO historico (ocorrencia_id, autor, acao, observacao, created_at)
+        VALUES (?, ?, 'Abertura de Ocorrência FOB', 'Divergência registrada e direcionada para a Área de Devolução.', ?)
+    """, (ocorrencia_id, nome_abridor, agora))
+    
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(url=f"/sucesso/{protocolo}", status_code=303)
+
+@app.get("/sucesso/{protocolo}", response_class=HTMLResponse)
+async def sucesso(request: Request, protocolo: str):
+    usuario = get_current_user(request)
+    if not usuario:
+        return RedirectResponse(url="/login", status_code=303)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM ocorrencias WHERE protocolo = ?", (protocolo,))
+    ocorrencia = cursor.fetchone()
+    conn.close()
+    
+    if not ocorrencia:
+        raise HTTPException(status_code=404, detail="Protocolo não localizado")
+
+    return templates.TemplateResponse(request=request, name="sucesso.html", context={
+        "ocorrencia": dict(ocorrencia),
+        "usuario_logado": usuario
+    })
+
 # ==========================================
-# ROTAS RESTRITAS (Mesa Suzano e Tratativas)
+# ROTAS DA MESA OPERACIONAL SUZANO
 # ==========================================
 
 @app.get("/painel", response_class=HTMLResponse)
@@ -277,6 +313,8 @@ async def painel(
     usuario = get_current_user(request)
     if not usuario:
         return RedirectResponse(url="/login?next=/painel", status_code=303)
+
+    filas_ativas = obter_filas_ativas()
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -316,11 +354,11 @@ async def painel(
     cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE status = 'Concluído'")
     total_concluidos = cursor.fetchone()["total"]
 
-    filas_nome = ["Área de Devolução", "Análise de Procedência", "Finalizar FO", "Fiscal"]
+    # Contagem dinâmica baseada nas filas ativas cadastradas pelo admin
     contagem_filas = {}
-    for f in filas_nome:
-        cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE fila_atual = ? AND status != 'Concluído'", (f,))
-        contagem_filas[f] = cursor.fetchone()["total"]
+    for f in filas_ativas:
+        cursor.execute("SELECT COUNT(*) as total FROM ocorrencias WHERE fila_atual = ? AND status != 'Concluído'", (f["nome"],))
+        contagem_filas[f["nome"]] = cursor.fetchone()["total"]
 
     conn.close()
 
@@ -330,6 +368,7 @@ async def painel(
         "total_novos": total_novos,
         "total_analise": total_analise,
         "total_concluidos": total_concluidos,
+        "filas_ativas": filas_ativas,
         "contagem_filas": contagem_filas,
         "filtro_fila": fila or "Todas",
         "filtro_status": status or "Todos",
@@ -342,6 +381,8 @@ async def detalhes_ocorrencia(request: Request, ocorrencia_id: int):
     usuario = get_current_user(request)
     if not usuario:
         return RedirectResponse(url=f"/login?next=/painel/protocolo/{ocorrencia_id}", status_code=303)
+
+    filas_ativas = obter_filas_ativas()
 
     conn = get_connection()
     cursor = conn.cursor()
@@ -362,6 +403,7 @@ async def detalhes_ocorrencia(request: Request, ocorrencia_id: int):
     return templates.TemplateResponse(request=request, name="detalhes.html", context={
         "ocorrencia": ocorrencia,
         "historico": historico,
+        "filas_ativas": filas_ativas,
         "usuario_logado": usuario
     })
 
@@ -372,7 +414,6 @@ async def tratar_ocorrencia(
     fila_destino: str = Form(...),
     novo_status: str = Form(...),
     prioridade: str = Form(...),
-    autor: Optional[str] = Form(None),
     observacao: str = Form(""),
     resolucao: Optional[str] = Form(None)
 ):
@@ -455,9 +496,9 @@ async def exportar_csv(request: Request):
         headers={"Content-Disposition": f"attachment; filename=fob_divergencias_suzano_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"}
     )
 
-# ==========================================
-# ROTAS EXCLUSIVAS DO ADMINISTRADOR (RBAC)
-# ==========================================
+# =========================================================================
+# ROTAS EXCLUSIVAS DO ADMINISTRADOR (CADASTRO DE USUÁRIOS E FILAS DE DESTINO)
+# =========================================================================
 
 @app.get("/admin/usuarios", response_class=HTMLResponse)
 async def admin_usuarios_page(request: Request, msg: Optional[str] = None, erro: Optional[str] = None):
@@ -466,17 +507,21 @@ async def admin_usuarios_page(request: Request, msg: Optional[str] = None, erro:
         return RedirectResponse(url="/login?next=/admin/usuarios", status_code=303)
         
     if usuario["perfil"] != "admin":
-        raise HTTPException(status_code=403, detail="Acesso restrito aos administradores do sistema.")
+        raise HTTPException(status_code=403, detail="Acesso restrito exclusivamente aos administradores do sistema.")
 
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, nome, username, perfil, ativo, created_at FROM usuarios ORDER BY id ASC")
     lista_usuarios = [dict(u) for u in cursor.fetchall()]
+
+    cursor.execute("SELECT id, nome, descricao, ordem, ativa FROM filas ORDER BY ordem ASC, id ASC")
+    lista_filas = [dict(f) for f in cursor.fetchall()]
     conn.close()
 
     return templates.TemplateResponse(request=request, name="admin_usuarios.html", context={
         "usuario_logado": usuario,
         "usuarios": lista_usuarios,
+        "filas": lista_filas,
         "mensagem": msg,
         "erro": erro
     })
@@ -519,15 +564,74 @@ async def admin_criar_usuario(
 async def admin_excluir_usuario(request: Request, usuario_id: int):
     usuario = get_current_user(request)
     if not usuario or usuario["perfil"] != "admin":
-        raise HTTPException(status_code=403, detail="Acesso restrito.")
+        raise HTTPException(status_code=403, detail="Acesso restrito aos administradores.")
 
     if usuario["id"] == usuario_id:
         return RedirectResponse(url="/admin/usuarios?erro=Voce+nao+pode+excluir+o+proprio+usuario+em+uso.", status_code=303)
 
     conn = get_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM usuarios WHERE id = ? AND username != 'admin'", (usuario_id,))
+    cursor.execute("DELETE FROM usuarios WHERE id = ? AND id != 1", (usuario_id,))
     conn.commit()
     conn.close()
 
     return RedirectResponse(url="/admin/usuarios?msg=Acesso+do+usuario+removido+com+sucesso!", status_code=303)
+
+# CADASTRO E GERENCIAMENTO DE FILAS DE DESTINO PELO ADMIN
+@app.post("/admin/filas/criar")
+async def admin_criar_fila(
+    request: Request,
+    nome_fila: str = Form(...),
+    descricao: str = Form("")
+):
+    usuario = get_current_user(request)
+    if not usuario or usuario["perfil"] != "admin":
+        raise HTTPException(status_code=403, detail="Acesso restrito.")
+
+    nome_clean = nome_fila.strip()
+    if not nome_clean:
+        return RedirectResponse(url="/admin/usuarios?erro=O+nome+da+fila+nao+pode+ser+vazio", status_code=303)
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    try:
+        cursor.execute("SELECT COALESCE(MAX(ordem), 0) + 1 as proxima FROM filas")
+        proxima_ordem = cursor.fetchone()["proxima"]
+        
+        cursor.execute("""
+            INSERT INTO filas (nome, descricao, ordem, ativa, created_at)
+            VALUES (?, ?, ?, 1, ?)
+        """, (nome_clean, descricao.strip(), proxima_ordem, agora))
+        conn.commit()
+    except Exception:
+        conn.close()
+        return RedirectResponse(url="/admin/usuarios?erro=Esta+fila+ja+esta+cadastrada.", status_code=303)
+
+    conn.close()
+    return RedirectResponse(url="/admin/usuarios?msg=Nova+fila+de+destino+cadastrada+com+sucesso!", status_code=303)
+
+@app.post("/admin/filas/{fila_id}/excluir")
+async def admin_excluir_fila(request: Request, fila_id: int):
+    usuario = get_current_user(request)
+    if not usuario or usuario["perfil"] != "admin":
+        raise HTTPException(status_code=403, detail="Acesso restrito.")
+
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT nome FROM filas WHERE id = ?", (fila_id,))
+    fila = cursor.fetchone()
+    if not fila:
+        conn.close()
+        return RedirectResponse(url="/admin/usuarios?erro=Fila+nao+encontrada.", status_code=303)
+
+    # Não permite excluir a Área de Devolução (pois é a fila inicial do sistema)
+    if fila["nome"] == "Área de Devolução":
+        conn.close()
+        return RedirectResponse(url="/admin/usuarios?erro=A+fila+Area+de+Devolucao+e+obrigatoria+e+nao+pode+ser+removida.", status_code=303)
+
+    cursor.execute("DELETE FROM filas WHERE id = ?", (fila_id,))
+    conn.commit()
+    conn.close()
+
+    return RedirectResponse(url="/admin/usuarios?msg=Fila+removida+com+sucesso!", status_code=303)
