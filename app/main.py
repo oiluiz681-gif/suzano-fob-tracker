@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from fastapi import FastAPI, Request, Form, UploadFile, File, HTTPException, Depends, status
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response, FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -31,7 +31,6 @@ app = FastAPI(
     openapi_url=None
 )
 
-app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
@@ -39,6 +38,56 @@ templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 # Inicializa banco de dados, tabelas de autenticação e filas dinâmicas
 init_db()
+
+# =========================================================================
+# FIREWALL / MIDDLEWARE GLOBAL DE SEGURANÇA CORPORATIVA (ZERO TRUST)
+# =========================================================================
+
+@app.middleware("http")
+async def security_firewall_middleware(request: Request, call_next):
+    path = request.url.path
+
+    # Rotas estritamente públicas (apenas tela/submissão de login e assets de layout)
+    is_public = (
+        path == "/login" or
+        path.startswith("/static") or
+        path == "/favicon.ico"
+    )
+
+    if not is_public:
+        token = request.cookies.get("session_token")
+        usuario = obter_usuario_da_sessao(token) if token else None
+        if not usuario:
+            if request.method == "GET":
+                next_param = f"?next={path}" if path not in ["/", "/login"] else ""
+                return RedirectResponse(url=f"/login{next_param}", status_code=303)
+            else:
+                return Response(
+                    content="Acesso corporativo restrito. Autenticação obrigatória.",
+                    status_code=401,
+                    media_type="text/plain; charset=utf-8"
+                )
+
+    response = await call_next(request)
+    
+    # Cabeçalhos de Segurança OWASP Recomendados
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    return response
+
+# Rota segura para fotos de evidências da doca (acesso restrito aos logados)
+@app.get("/uploads/{filename}")
+async def get_upload_file(request: Request, filename: str):
+    usuario = get_current_user(request)
+    if not usuario:
+        return RedirectResponse(url="/login", status_code=303)
+    safe_name = os.path.basename(filename)
+    file_path = os.path.join(UPLOAD_DIR, safe_name)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado")
+    return FileResponse(file_path)
 
 # Dicionário oficial de centros da Suzano
 CENTROS_SUZANO = {
@@ -169,12 +218,14 @@ async def login_submit(
     token = criar_sessao(user_row["id"])
     dest_url = next if (next and next.startswith("/") and not next.startswith("/login")) else "/"
     response = RedirectResponse(url=dest_url, status_code=303)
+    is_https = (request.url.scheme == "https") or ("onrender.com" in request.headers.get("host", ""))
     response.set_cookie(
         key="session_token",
         value=token,
         httponly=True,
         max_age=7 * 24 * 3600, # 7 dias
-        samesite="lax"
+        samesite="lax",
+        secure=is_https
     )
     return response
 
