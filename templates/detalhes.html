@@ -31,7 +31,7 @@
     <div class="flex items-center space-x-2">
       <a href="/rastreio/{{ ocorrencia.protocolo }}" target="_blank" class="px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg shadow-sm flex items-center space-x-1">
         <i data-lucide="external-link" class="w-3.5 h-3.5 text-slate-400"></i>
-        <span>Visão Pública (Motorista)</span>
+        <span>Visão Pública (Rastreio)</span>
       </a>
     </div>
   </div>
@@ -100,7 +100,7 @@
             </span>
           </div>
           <div class="bg-slate-50 p-4 rounded-xl text-xs text-slate-700 leading-relaxed border border-slate-200/60">
-            <p class="font-semibold text-slate-900 mb-1">Relato do Motorista / Doca:</p>
+            <p class="font-semibold text-slate-900 mb-1">Relato da Doca:</p>
             {{ ocorrencia.descricao }}
           </div>
         </div>
@@ -187,27 +187,17 @@
 
         <form action="/painel/protocolo/{{ ocorrencia.id }}/tratar" method="POST" class="space-y-4 text-xs">
           
-          <!-- Fila de Destino -->
+          <!-- Fila de Destino DINÂMICA (Configurada pelo Admin) -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1" for="fila_destino">
-              Direcionar para a Fila:
+              Direcionar para a Fila de Destino:
             </label>
             <select name="fila_destino" id="fila_destino" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 bg-white font-medium">
-              <!-- As 3 Filas Principais do Fluxo Suzano -->
-              <option value="Área de Devolução" {% if ocorrencia.fila_atual == 'Área de Devolução' or ocorrencia.fila_atual == 'Área Devolução' %}selected{% endif %}>
-                📥 Área Devolução (Fila Inicial de Entrada)
-              </option>
-              <option value="Análise de Procedência" {% if ocorrencia.fila_atual == 'Análise de Procedência' %}selected{% endif %}>
-                🔍 Análise de Procedência (Operação / Análise de Falta)
-              </option>
-              <option value="Finalizar FO" {% if ocorrencia.fila_atual == 'Finalizar FO' %}selected{% endif %}>
-                💰 Finalizar FO (Ressarcimento do Cliente)
-              </option>
-              
-              <!-- Filas de Apoio -->
-              <option value="Fiscal" {% if ocorrencia.fila_atual == 'Fiscal' %}selected{% endif %}>
-                ⚖️ Fiscal (NF Devolução / Canhoto / Carta Correção)
-              </option>
+              {% for f in filas_ativas %}
+                <option value="{{ f.nome }}" {% if ocorrencia.fila_atual == f.nome %}selected{% endif %}>
+                  {{ f.nome }}
+                </option>
+              {% endfor %}
             </select>
           </div>
 
@@ -238,21 +228,12 @@
             </select>
           </div>
 
-          <!-- Autor / Setor -->
-          <div>
-            <label class="block font-semibold text-slate-700 mb-1" for="autor">
-              Identificação do Analista / Setor:
-            </label>
-            <input type="text" name="autor" id="autor" required value="Operação Suzano"
-                   class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500">
-          </div>
-
           <!-- Parecer Interno -->
           <div>
             <label class="block font-semibold text-slate-700 mb-1" for="observacao">
-              Parecer Técnico / Instrução para a Fila:
+              Parecer Técnico / Despacho:
             </label>
-            <textarea name="observacao" id="observacao" rows="3" placeholder="Ex: Procedência confirmada pela operação. Encaminhado para a fila Finalizar FO para ressarcimento..."
+            <textarea name="observacao" id="observacao" rows="3" placeholder="Insira seu parecer técnico da tratativa..."
                       class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500"></textarea>
           </div>
 
