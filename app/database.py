@@ -1,6 +1,8 @@
 import os
 import sqlite3
 import json
+import hashlib
+import secrets
 from datetime import datetime
 
 DB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data")
@@ -11,6 +13,11 @@ def get_connection():
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
+
+def _gerar_hash_inicial(senha: str) -> str:
+    salt = secrets.token_hex(16)
+    key = hashlib.pbkdf2_hmac('sha256', senha.encode('utf-8'), salt.encode('utf-8'), 100000)
+    return f"{salt}${key.hex()}"
 
 def init_db():
     conn = get_connection()
@@ -61,9 +68,45 @@ def init_db():
     );
     """)
     
+    # Tabela de Usuários (Controle de Acesso / Perfis Admin e Comum)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS usuarios (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nome TEXT NOT NULL,
+        username TEXT UNIQUE NOT NULL,
+        senha_hash TEXT NOT NULL,
+        perfil TEXT NOT NULL DEFAULT 'comum',
+        ativo INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL
+    );
+    """)
+
+    # Tabela de Sessões para Login Seguro
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sessoes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        token TEXT UNIQUE NOT NULL,
+        usuario_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
+    );
+    """)
+
     conn.commit()
+
+    # Criação do usuário Administrador inicial se não houver usuários cadastrados
+    cursor.execute("SELECT COUNT(*) as total FROM usuarios")
+    if cursor.fetchone()["total"] == 0:
+        agora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        senha_admin = _gerar_hash_inicial("Suzano@2026")
+        cursor.execute("""
+            INSERT INTO usuarios (nome, username, senha_hash, perfil, ativo, created_at)
+            VALUES (?, ?, ?, 'admin', 1, ?)
+        """, ("Administrador Suzano", "admin", senha_admin, agora))
+        conn.commit()
     
-    # Seed de dados se a tabela estiver vazia
+    # Seed de dados de ocorrências se a tabela estiver vazia
     cursor.execute("SELECT COUNT(*) as total FROM ocorrencias")
     row = cursor.fetchone()
     if row["total"] == 0:
