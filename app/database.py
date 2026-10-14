@@ -24,28 +24,16 @@ OCORRENCIAS_BACKUP = os.path.join(DB_DIR, "ocorrencias_permanentes.json")
 # =========================================================================
 USUARIOS_PRE_CADASTRADOS = [
     {
-        "nome": "Luiz Fernando Ferreira",
-        "username": "admin",
-        "senha": "Suzano@2026",
-        "perfil": "admin"
-    },
-    {
-        "nome": "Luiz Fernando Ferreira",
-        "username": "luiz.ferreira",
-        "senha": "Suzano@2026",
-        "perfil": "admin"
-    },
-    {
         "nome": "MARIANA DA SILVA MELO",
         "username": "marianasm@suzano.com.br",
         "senha": "Suzano@123",
-        "perfil": "admin"
+        "perfil": "comum"
     },
     {
         "nome": "MARIANA DA SILVA MELO",
         "username": "marianasm",
         "senha": "Suzano@123",
-        "perfil": "admin"
+        "perfil": "comum"
     }
 ]
 
@@ -376,6 +364,22 @@ def init_db():
 
     # Restaura backups locais se existirem
     restaurar_backup_local(conn)
+
+    # Atualiza ou cria o Administrador mestre: "Luiz Fernando Ferreira"
+    cursor.execute("SELECT id, username FROM usuarios WHERE id = 1 OR username = 'admin' OR username = 'luiz.ferreira'")
+    admin_row = cursor.fetchone()
+    if admin_row:
+        cursor.execute("""
+            UPDATE usuarios 
+            SET nome = 'Luiz Fernando Ferreira', perfil = 'admin', ativo = 1 
+            WHERE id = ?
+        """, (admin_row["id"],))
+    else:
+        senha_admin = _gerar_hash_inicial("Suzano@2026")
+        cursor.execute("""
+            INSERT INTO usuarios (nome, username, senha_hash, perfil, ativo, created_at)
+            VALUES (?, ?, ?, 'admin', 1, ?)
+        """, ("Luiz Fernando Ferreira", "admin", senha_admin, agora))
 
     # Garante os usuários pré-cadastrados fixos em todo reinício/dormida do Render
     for u in USUARIOS_PRE_CADASTRADOS:
